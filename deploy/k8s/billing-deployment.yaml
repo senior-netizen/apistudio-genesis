@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-service
+  template:
+    metadata:
+      labels:
+        app: billing-service
+    spec:
+      containers:
+        - name: billing-service
+          image: squirrel-api/billing-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3006
+          envFrom:
+            - configMapRef:
+                name: squirrel-config
+          env:
+            - name: PORT
+              value: "3006"
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: squirrel-config
+                  key: REDIS_URL
+            - name: SQUIRREL_INTERNAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: SQUIRREL_INTERNAL_KEY
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: BILLING_POSTGRES_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3006
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3006
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

@@ -1,0 +1,15 @@
+{
+  "client": "Thunder Client",
+  "environmentName": "Local",
+  "dateExported": "2025-11-08",
+  "version": "1.0",
+  "variables": [
+    { "name": "base", "value": "http://localhost:8081/v1" },
+    { "name": "csrf", "value": "" },
+    { "name": "token", "value": "" },
+    { "name": "email", "value": "you@example.com" },
+    { "name": "password", "value": "P@ssw0rd!" },
+    { "name": "displayName", "value": "You" },
+    { "name": "workspaceName", "value": "My Team" }
+  ]
+}

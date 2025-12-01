@@ -1,0 +1,8 @@
+name: postgres
+engine: postgresql
+plan: standard
+version: 15
+storage: 20Gi
+backup:
+  enabled: true
+  intervalHours: 24

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "types": ["node"],
+    "paths": {
+      "@sdl/ui/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "command-palette"]
+}

@@ -1,0 +1,140 @@
+﻿import { ChangeEvent, useMemo, useRef } from 'react';
+import { Button } from '@sdl/ui';
+import { Info, Loader2, Play } from 'lucide-react';
+import type { ApiRequest } from '../../types/api';
+import { useAppStore } from '../../store';
+import { resolveValue } from '../../lib/env/resolveVars';
+import { useCollaborativeField } from '../../modules/collab/useCollaborativeField';
+import { CollaborativeCursors } from '../../modules/collab/CollaborativeCursors';
+
+interface UrlBarProps {
+  request: ApiRequest;
+}
+
+const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+
+const methodStyles: Record<string, string> = {
+  GET: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300',
+  POST: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300',
+  PUT: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300',
+  PATCH: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-300',
+  DELETE: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300',
+  HEAD: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-300',
+  OPTIONS: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-300',
+};
+
+export default function UrlBar({ request }: UrlBarProps) {
+  const {
+    updateWorkingRequest,
+    environments,
+    activeEnvironmentId,
+    setActiveEnvironment,
+    globalVariables,
+    isSending...
+  } = useAppStore((state) => ({
+    updateWorkingRequest: state.updateWorkingRequest,
+    environments: state.environments,
+    activeEnvironmentId: state.activeEnvironmentId,
+    setActiveEnvironment: state.setActiveEnvironment,
+    globalVariables: state.globalVariables,
+    isSending....tate.isSending...
+  }));
+  const environment = environments.find((item) => item.id === activeEnvironmentId);
+  const resolved = resolveValue(request.url, { globals: globalVariables, environment, locals: [] });
+
+  const variableSuggestions = useMemo(() => {
+    const suggestions = new Set<string>();
+    globalVariables.forEach((variable) => suggestions.add(`{{${variable.key}}}`));
+    environment?.variables.forEach((variable) => suggestions.add(`{{${variable.key}}}`));
+    return Array.from(suggestions);
+  }, [environment?.variables, globalVariables]);
+
+  const handleUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    updateWorkingRequest((draft) => ({ ...draft, url: value }));
+  };
+
+  const handleMethodChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    updateWorkingRequest((draft) => ({ ...draft, method: value }));
+  };
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  useCollaborativeField('request.url', inputRef, true);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-1 items-center gap-3">
+          <select
+            value={request.method}
+            onChange={handleMethodChange}
+            className={`rounded-xl border border-border/60 px-3 py-2 text-sm font-semibold uppercase tracking-[0.25em] shadow-sm focus:outline-none focus:ring-2 focus:ring-ring ${
+              methodStyles[request.method] ?? 'bg-background/90 text-foreground'
+            }`}
+            aria-label="HTTP method"
+          >
+            {methodOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <div className="relative flex-1">
+            <input
+              ref={inputRef}
+              value={request.url}
+              onChange={handleUrlChange}
+              className="h-12 w-full rounded-xl border border-border/60 bg-background/90 px-4 text-sm font-mono text-foreground shadow-inner focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="https://api.example.com/resource"
+              aria-label="Request URL"
+              autoComplete="off"
+              list="request-url-variables"
+            />
+            <CollaborativeCursors field="request.url" />
+            <datalist id="request-url-variables">
+              {variableSuggestions.map((suggestion) => (
+                <option key={suggestion} value={suggestion} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 md:w-auto md:flex-row md:items-center">
+          <label className="text-[11px] uppercase tracking-[0.3em] text-muted md:hidden">Environment</label>
+          <select
+            value={activeEnvironmentId ?? ''}
+            onChange={(event) => setActiveEnvironment(event.target.value)}
+            className="rounded-xl border border-border/60 bg-background/90 px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label="Active environment"
+          >
+            {environments.map((env) => (
+              <option key={env.id} value={env.id as string}>
+                {env.name}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="primary"
+            onClick={() => useAppStore.getState().sendRequest()}
+            disabled={isSending...
+            className="flex items-center justify-center gap-2"
+          >
+            {isSending....<Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
+            {isSending....'Sending....' : 'Send'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-3 text-xs text-muted">
+        <Info className="mt-0.5 h-3.5 w-3.5" aria-hidden />
+        <div>
+          <p className="font-semibold uppercase tracking-[0.3em]">Resolved URL</p>
+          <code className="mt-1 block truncate font-mono text-sm text-foreground">{resolved.value}</code>
+          {resolved.unresolved.length > 0 && (
+            <p className="mt-1 text-xs text-accent">Unresolved variables: {resolved.unresolved.join(', ')}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

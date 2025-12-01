@@ -1,0 +1,34 @@
+{
+  "name": "request-title-conflict",
+  "initial": {
+    "request": {
+      "name": "Original title",
+      "description": "",
+      "headers": {}
+    }
+  },
+  "actors": [
+    {
+      "actorId": "web",
+      "operations": [
+        { "type": "set", "path": ["request", "name"], "value": "Title from web" }
+      ]
+    },
+    {
+      "actorId": "cli",
+      "operations": [
+        { "type": "set", "path": ["request", "description"], "value": "CLI adds description" },
+        { "type": "set", "path": ["request", "headers", "x-trace-id"], "value": "abc123" }
+      ]
+    }
+  ],
+  "expectation": {
+    "request": {
+      "name": "Title from web",
+      "description": "CLI adds description",
+      "headers": {
+        "x-trace-id": "abc123"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@sdl/language",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "description": "Shared brand and language constants for Squirrel API Studio surfaces"
+}

@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+    --sdl-color-background: 246 247 249;
+    --sdl-color-foreground: 15 17 26;
+    --sdl-color-muted: 120 123 135;
+    --sdl-color-border: 214 215 221;
+    --sdl-color-accent: 88 101 242;
+    --sdl-color-success: 16 185 129;
+    --sdl-color-warning: 234 179 8;
+    --sdl-color-danger: 239 68 68;
+    --sdl-color-ring: 88 101 242;
+    background-color: rgb(var(--sdl-color-background));
+    color: rgb(var(--sdl-color-foreground));
+  }
+
+  [data-theme='dark'] {
+    --sdl-color-background: 9 10 16;
+    --sdl-color-foreground: 242 244 248;
+    --sdl-color-muted: 139 142 153;
+    --sdl-color-border: 43 46 58;
+    --sdl-color-accent: 99 102 241;
+    --sdl-color-success: 16 185 129;
+    --sdl-color-warning: 234 179 8;
+    --sdl-color-danger: 248 113 113;
+    --sdl-color-ring: 129 140 248;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen font-sans;
+  }
+
+  ::selection {
+    @apply bg-accent/30 text-foreground;
+  }
+}
+
+@keyframes fade-in-subtle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply border border-white/10 dark:border-white/5 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl shadow-lg shadow-black/5 dark:shadow-black/40;
+  }
+
+  .animate-fade-in-subtle {
+    animation: fade-in-subtle 180ms ease-out both;
+  }
+}

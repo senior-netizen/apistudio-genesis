@@ -1,0 +1,703 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String
+  displayName        String
+  totpSecret         String?   @db.VarChar(128)
+  stripeCustomerId   String?   @map("stripe_customer_id")
+  billingStatus      String    @default("free") @map("billing_status")
+  proSubscriptionId  String?   @map("pro_subscription_id")
+  accountFrozen      Boolean   @default(false) @map("account_frozen")
+  role               String    @default("user")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  sessions           Session[]
+  workspaces         WorkspaceMember[]
+  // apiKeys are scoped to workspaces; no direct user relation
+  // auditLogs are recorded with actorId but not a hard relation
+  requestRuns        RequestRun[]
+  requestLogs        RequestLog[]
+  devices            Device[]
+  workspacesOwned    Workspace[]        @relation("WorkspaceOwner")
+  pairSessionsAsDriver    PairSession[]     @relation("PairSessionDriver")
+  pairSessionsAsNavigator PairSession[]     @relation("PairSessionNavigator")
+  apiProvider        ApiProvider?
+  marketplaceKeys    ApiKey[]
+  subscriptions      HubSubscription[]
+  creditsTransactions CreditsTransaction[]
+  invoices           BillingInvoice[]
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String   @map("user_id")
+  refreshToken  String   @unique @map("refresh_token")
+  deviceId      String?  @map("device_id")
+  userAgent     String?
+  ipAddress     String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  expiresAt     DateTime @map("expires_at")
+  revokedAt     DateTime? @map("revoked_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Device authorization codes for CLI/desktop OAuth device grant
+model DeviceCode {
+  id             String   @id @default(cuid())
+  deviceCode     String   @unique @map("device_code")
+  userCode       String   @unique @map("user_code")
+  clientType     String   @map("client_type")
+  scope          String?
+  userId         String?  @map("user_id")
+  expiresAt      DateTime @map("expires_at")
+  verifiedAt     DateTime? @map("verified_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+}
+
+model Workspace {
+  id           String             @id @default(cuid())
+  name         String
+  slug         String             @unique
+  owner        User               @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  ownerId      String             @map("owner_id")
+  plan         WorkspacePlan      @default(FREE)
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  members      WorkspaceMember[]
+  apiKeys      ApiKey[]
+  projects    Project[]
+  collections  Collection[]
+  environments Environment[]
+  variables    Variable[]
+  auditLogs    AuditLog[]
+  analytics    AnalyticsEvent[]
+  files        FileObject[]
+  pairSessions PairSession[]
+  docSnapshots DocSnapshot[]
+  requestLogs  RequestLog[]
+  subscriptions HubSubscription[]
+  creditsTransactions CreditsTransaction[]
+  invoices      BillingInvoice[]
+
+  @@index([ownerId])
+}
+
+model ApiProvider {
+  id           String        @id @default(cuid())
+  user         User          @relation(fields: [userId], references: [id])
+  userId       String        @map("user_id") @unique
+  displayName  String        @map("display_name")
+  description  String?       @map("description")
+  payoutType   String        @default("manual") @map("payout_type")
+  payoutConfig Json?         @map("payout_config")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  apis         PublishedApi[]
+}
+
+model PublishedApi {
+  id               String        @id @default(cuid())
+  provider         ApiProvider   @relation(fields: [providerId], references: [id])
+  providerId       String        @map("provider_id")
+  name             String
+  baseUrl          String        @map("base_url")
+  logoUrl          String?       @map("logo_url")
+  category         String
+  shortDescription String        @map("short_description")
+  longDescription  String        @map("long_description")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  plans            ApiPlan[]
+  keys             ApiKey[]
+
+  @@index([providerId])
+}
+
+model ApiPlan {
+  id                 String       @id @default(cuid())
+  api               PublishedApi @relation(fields: [apiId], references: [id])
+  apiId             String        @map("api_id")
+  name              String
+  monthlyPriceUSD   Decimal?      @map("monthly_price_usd")
+  yearlyPriceUSD    Decimal?      @map("yearly_price_usd")
+  rateLimitPerMinute Int          @map("rate_limit_per_minute")
+  burstLimit        Int           @map("burst_limit")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  keys              ApiKey[]
+
+  @@index([apiId])
+}
+
+model ApiKey {
+  id                   String        @id @default(cuid())
+  workspace            Workspace?    @relation(fields: [workspaceId], references: [id])
+  workspaceId          String?       @map("workspace_id")
+  project              Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId            String?       @map("project_id")
+  name                 String?
+  keyHash              String        @map("key_hash")
+  lastUsedAt           DateTime?     @map("last_used_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  expiresAt            DateTime?     @map("expires_at")
+  revokedAt            DateTime?     @map("revoked_at")
+  revoked              Boolean       @default(false)
+  api                  PublishedApi? @relation(fields: [apiId], references: [id])
+  apiId                String?       @map("api_id")
+  subscriber           User?         @relation(fields: [subscriberUserId], references: [id])
+  subscriberUserId     String?       @map("subscriber_user_id")
+  plan                 ApiPlan?      @relation(fields: [planId], references: [id])
+  planId               String?       @map("plan_id")
+  status               String?       @default("pending")
+  billingInterval      String?       @map("billing_interval")
+  stripeSubscriptionId String?       @map("stripe_subscription_id")
+  stripeCustomerId     String?       @map("stripe_customer_id")
+  checkoutSessionId    String?       @map("checkout_session_id")
+  usageCount           Int           @default(0) @map("usage_count")
+  logs                 ApiUsageLog[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, projectId])
+  @@index([billingInterval])
+  @@index([planId])
+  @@index([stripeSubscriptionId])
+  @@index([stripeCustomerId])
+  @@index([apiId])
+  @@index([subscriberUserId])
+  @@index([createdAt])
+}
+
+model ApiUsageLog {
+  id          String   @id @default(cuid())
+  apiKey      ApiKey   @relation(fields: [apiKeyId], references: [id])
+  apiKeyId    String   @map("api_key_id")
+  method      String
+  url         String
+  status      Int?
+  durationMs  Int?     @map("duration_ms")
+  timestamp   DateTime @default(now())
+  error       String?
+
+  @@index([apiKeyId])
+  @@index([timestamp])
+}
+
+model CollaborationInvite {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map("workspace_id")
+  email       String
+  role        String
+  invitedBy   String?
+  status      String    @default("pending")
+  message     String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  expiresAt   DateTime? @map("expires_at")
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model CollaborationShareLink {
+  id               String    @id @default(cuid())
+  workspace        Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId      String    @map("workspace_id")
+  label            String
+  url              String
+  scope            String
+  status           String    @default("active")
+  requiresApproval Boolean   @default(false) @map("requires_approval")
+  usageCount       Int       @default(0) @map("usage_count")
+  maxUses          Int?      @map("max_uses")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  expiresAt        DateTime? @map("expires_at")
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model CollaborationSession {
+  id           String    @id @default(cuid())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId  String    @map("workspace_id")
+  title        String
+  hostId       String    @map("host_id")
+  status       String    @default("scheduled")
+  startedAt    DateTime  @map("started_at")
+  timezone     String
+  participants Json?
+  agenda       String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([hostId])
+}
+
+model CollaborationComment {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map("workspace_id")
+  userId      String    @map("user_id")
+  userName    String    @map("user_name")
+  message     String
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId])
+  @@index([createdAt])
+}
+
+model CollaborationActivity {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map("workspace_id")
+  type        String
+  actor       String?
+  message     String
+  severity    String    @default("info")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId])
+  @@index([createdAt])
+}
+
+model CollaborationResidency {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map("workspace_id")
+  region      String
+  dataCenter  String    @map("data_center")
+  primary     Boolean   @default(false)
+  status      String    @default("active")
+  cutoverAt   DateTime? @map("cutover_at")
+
+  @@unique([workspaceId, region])
+  @@index([workspaceId])
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum WorkspacePlan {
+  FREE
+  TEAM
+  BUSINESS
+  ENTERPRISE
+}
+
+model WorkspaceMember {
+  id           String         @id @default(cuid())
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id])
+  workspaceId  String         @map("workspace_id")
+  user         User           @relation(fields: [userId], references: [id])
+  userId       String         @map("user_id")
+  role         WorkspaceRole  @default(VIEWER)
+  invitedById  String?        @map("invited_by_id")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@unique([workspaceId, userId])
+}
+
+model Collection {
+  id           String      @id @default(cuid())
+  workspace    Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId  String      @map("workspace_id")
+  project      Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId    String?     @map("project_id")
+  name         String
+  parent       Collection? @relation("CollectionHierarchy", fields: [parentCollectionId], references: [id], onDelete: SetNull)
+  parentCollectionId String?     @map("parent_collection_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  children     Collection[] @relation("CollectionHierarchy")
+  requests     Request[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, createdAt])
+  @@index([projectId])
+}
+
+model Request {
+  id            String        @id @default(cuid())
+  collection    Collection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId  String        @map("collection_id")
+  name          String
+  method        String
+  url           String
+  headers       Json          @default("{}")
+  body          Json?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  runs          RequestRun[]
+  pairSessions  PairSession[]
+  docSnapshots  DocSnapshot[]
+  requestLogs   RequestLog[]
+
+  @@index([collectionId])
+  @@index([collectionId, createdAt])
+}
+
+model RequestRun {
+  id           String   @id @default(cuid())
+  request      Request  @relation(fields: [requestId], references: [id])
+  requestId    String   @map("request_id")
+  user         User?    @relation(fields: [userId], references: [id])
+  userId       String?  @map("user_id")
+  status       RunStatus
+  responseCode Int?
+  responseBody Json?
+  error        String?
+  durationMs   Int?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([requestId, createdAt])
+  @@index([createdAt])
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model Environment {
+  id          String     @id @default(cuid())
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId String     @map("workspace_id")
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId   String?    @map("project_id")
+  name        String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  variables   Variable[]
+
+  @@index([workspaceId])
+  @@index([projectId])
+}
+
+model Variable {
+  id            String       @id @default(cuid())
+  key           String
+  value         String
+  environment   Environment? @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  environmentId String?      @map("environment_id")
+  workspace     Workspace?   @relation(fields: [workspaceId], references: [id])
+  workspaceId   String?      @map("workspace_id")
+  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId     String?      @map("project_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@index([environmentId])
+  @@index([projectId])
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId  String    @map("workspace_id")
+  actorId      String?
+  action       String
+  targetId     String?
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt])
+}
+
+model SupportTakeoverLog {
+  id            String   @id @default(cuid())
+  sessionId     String   @map("session_id")
+  actorId       String   @map("actor_id")
+  targetUserId  String?  @map("target_user_id")
+  mode          String
+  reason        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+}
+
+model FeatureFlag {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  enabled   Boolean  @default(false)
+  payload   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String   @map("workspace_id")
+  requestId   String?  @map("request_id")
+  type        String
+  durationMs  Int?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt])
+}
+
+model HubSubscription {
+  id                     String    @id @default(cuid())
+  user                   User      @relation(fields: [userId], references: [id])
+  userId                 String    @map("user_id")
+  workspace              Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  workspaceId            String?    @map("workspace_id")
+  plan                   String
+  status                 String
+  stripeCustomerId       String?   @map("stripe_customer_id")
+  stripeSubscriptionId   String?   @map("stripe_subscription_id")
+  stripeCheckoutSessionId String?  @map("stripe_checkout_session_id")
+  metadata               Json?
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@unique([userId])
+  @@unique([stripeSubscriptionId])
+}
+
+model BillingInvoice {
+  id                   String    @id @default(cuid())
+  user                 User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId               String?   @map("user_id")
+  workspace            Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  workspaceId          String?   @map("workspace_id")
+  stripeInvoiceId      String    @unique @map("stripe_invoice_id")
+  stripeCustomerId     String    @map("stripe_customer_id")
+  stripeSubscriptionId String?   @map("stripe_subscription_id")
+  amountDue            Int       @map("amount_due")
+  amountPaid           Int       @map("amount_paid")
+  currency             String
+  status               String
+  issuedAt             DateTime  @map("issued_at")
+  paidAt               DateTime? @map("paid_at")
+  metadata             Json?
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model CreditsTransaction {
+  id                        String    @id @default(cuid())
+  user                      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId                    String?   @map("user_id")
+  workspace                 Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  workspaceId               String?   @map("workspace_id")
+  amount                    Int
+  currency                  String    @default("usd")
+  reason                    String
+  stripeInvoiceId           String?   @map("stripe_invoice_id")
+  stripeBalanceTransactionId String?  @map("stripe_balance_transaction_id")
+  metadata                  Json?
+  recordedAt                DateTime  @default(now()) @map("recorded_at")
+
+  @@index([workspaceId, recordedAt])
+  @@index([userId, recordedAt])
+}
+
+model FileObject {
+  id          String   @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String   @map("workspace_id")
+  name        String
+  storageKey  String   @map("storage_key")
+  contentType String   @map("content_type")
+  sizeBytes   Int      @map("size_bytes")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt])
+}
+
+
+enum SecretScopeType {
+  WORKSPACE
+  PROJECT
+}
+
+
+enum DeviceKind {
+  WEB
+  DESKTOP
+  VSCODE
+}
+
+
+enum SyncOperationType {
+  INSERT
+  UPDATE
+  DELETE
+  CRDT
+}
+
+
+model Project {
+  id          String       @id @default(cuid())
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String       @map("workspace_id")
+  name        String
+  description String?
+  order       Int?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  collections Collection[]
+  environments Environment[]
+  apiKeys     ApiKey[]
+  variables   Variable[]
+
+  @@index([workspaceId])
+}
+
+
+model Secret {
+  id             String           @id @default(cuid())
+  scopeType      SecretScopeType  @map("scope_type")
+  scopeId        String           @map("scope_id")
+  key            String
+  valueEncrypted String           @map("value_encrypted")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([scopeType, scopeId])
+  @@unique([scopeType, scopeId, key])
+}
+
+
+model Device {
+  id          String     @id @default(cuid())
+  user        User?      @relation(fields: [userId], references: [id])
+  userId      String?    @map("user_id")
+  kind        DeviceKind
+  fingerprint String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  syncStates  SyncState[]  @relation("DeviceSyncStates")
+  syncChanges SyncChange[] @relation("DeviceSyncChanges")
+
+  @@index([userId])
+  @@unique([kind, fingerprint])
+}
+
+
+model SyncState {
+  id          String          @id @default(cuid())
+  scopeType   String          @map("scope_type")
+  scopeId     String          @map("scope_id")
+  device      Device?        @relation("DeviceSyncStates", fields: [deviceId], references: [id], onDelete: SetNull)
+  deviceId    String?        @map("device_id")
+  vectorClock Json            @map("vector_clock")
+  serverEpoch BigInt          @map("server_epoch")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@index([scopeType, scopeId])
+  @@index([deviceId])
+  @@unique([scopeType, scopeId, deviceId])
+}
+
+
+model SyncChange {
+  id          String            @id @default(cuid())
+  scopeType   String            @map("scope_type")
+  scopeId     String            @map("scope_id")
+  device      Device?          @relation("DeviceSyncChanges", fields: [deviceId], references: [id], onDelete: SetNull)
+  deviceId    String?          @map("device_id")
+  opType      SyncOperationType @map("op_type")
+  payload     Json
+  lamport     BigInt
+  serverEpoch BigInt            @map("server_epoch")
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@index([scopeType, scopeId, serverEpoch])
+  @@index([scopeType, scopeId, createdAt])
+}
+
+
+model SyncSnapshot {
+  id                String   @id @default(cuid())
+  scopeType         String   @map("scope_type")
+  scopeId           String   @map("scope_id")
+  version           BigInt
+  payloadCompressed Bytes    @map("payload_compressed")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([scopeType, scopeId, version])
+  @@index([scopeType, scopeId, version])
+}
+
+model PairSession {
+  id           String    @id @default(cuid())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId  String    @map("workspace_id")
+  request      Request?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  requestId    String?   @map("request_id")
+  driver       User      @relation("PairSessionDriver", fields: [driverId], references: [id])
+  driverId     String    @map("driver_id")
+  navigator    User      @relation("PairSessionNavigator", fields: [navigatorId], references: [id])
+  navigatorId  String    @map("navigator_id")
+  startedAt    DateTime  @default(now()) @map("started_at")
+  endedAt      DateTime? @map("ended_at")
+
+  @@index([workspaceId])
+  @@index([requestId])
+  @@index([driverId])
+  @@index([navigatorId])
+}
+
+model DocSnapshot {
+  id           String    @id @default(cuid())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId  String    @map("workspace_id")
+  request      Request?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  requestId    String?   @map("request_id")
+  docId        String    @map("doc_id")
+  version      Int       @default(0)
+  snapshot     Bytes     @map("snapshot")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@unique([workspaceId, docId, version])
+  @@index([workspaceId, docId])
+}
+
+model RequestLog {
+  id           String    @id @default(cuid())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId  String    @map("workspace_id")
+  request      Request?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  requestId    String?   @map("request_id")
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId       String?   @map("user_id")
+  timestamp    DateTime  @default(now())
+  method       String
+  url          String
+  status       Int?
+  durationMs   Int?      @map("duration_ms")
+  sizeBytes    Int?      @map("size_bytes")
+  environment  String?
+  error        String?
+
+  @@index([workspaceId, timestamp])
+  @@index([requestId, timestamp])
+}

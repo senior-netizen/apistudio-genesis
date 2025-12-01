@@ -1,0 +1,13 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../",
+  "testRegex": ".*\\.e2e-spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "<rootDir>/test/tsconfig.e2e.json" }]
+  },
+  "moduleNameMapper": {
+    "^@sdl/sync-core$": "<rootDir>/test/mocks/sdl-sync-core.ts"
+  },
+  "coverageDirectory": "../coverage",
+  "testEnvironment": "node"
+}

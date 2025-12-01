@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+        - name: ai-service
+          image: squirrel-api/ai-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3005
+          envFrom:
+            - configMapRef:
+                name: squirrel-config
+          env:
+            - name: PORT
+              value: "3005"
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: squirrel-config
+                  key: REDIS_URL
+            - name: SQUIRREL_INTERNAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: SQUIRREL_INTERNAL_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: OPENAI_API_KEY
+            - name: EMBEDDINGS_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: squirrel-config
+                  key: EMBEDDINGS_MODEL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"

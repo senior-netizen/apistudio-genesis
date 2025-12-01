@@ -1,0 +1,157 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: squirrel
+      POSTGRES_USER: squirrel
+      POSTGRES_DB: squirrel
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../docker/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+    - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - squirrel
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - squirrel
+
+  auth-service:
+    build: ./microservices/auth-service
+    env_file:
+      - ./microservices/auth-service/.env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - squirrel
+
+  user-service:
+    build: ./microservices/user-service
+    env_file:
+      - ./microservices/user-service/.env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - squirrel
+
+  workspace-service:
+    build: ./microservices/workspace-service
+    env_file:
+      - ./microservices/workspace-service/.env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - squirrel
+
+  api-runner-service:
+    build: ./microservices/api-runner-service
+    env_file:
+      - ./microservices/api-runner-service/.env.example
+    depends_on:
+      - redis
+    networks:
+      - squirrel
+
+  ai-service:
+    build: ./microservices/ai-service
+    env_file:
+      - ./microservices/ai-service/.env.example
+    depends_on:
+      - redis
+    networks:
+      - squirrel
+
+  billing-service:
+    build: ./microservices/billing-service
+    env_file:
+      - ./microservices/billing-service/.env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - squirrel
+
+  notifications-service:
+    build: ./microservices/notifications-service
+    env_file:
+      - ./microservices/notifications-service/.env.example
+    depends_on:
+      - redis
+    networks:
+      - squirrel
+
+  logs-service:
+    build: ./microservices/logs-service
+    env_file:
+      - ./microservices/logs-service/.env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - squirrel
+
+  gateway:
+    build: ./gateway
+    env_file:
+      - ./gateway/.env.example
+    depends_on:
+      - auth-service
+      - user-service
+      - workspace-service
+      - api-runner-service
+      - ai-service
+      - billing-service
+      - notifications-service
+      - logs-service
+    networks:
+      - squirrel
+    ports:
+      - '8080:3080'
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - gateway
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - '80:80'
+    networks:
+      - squirrel
+
+networks:
+  squirrel:
+    driver: bridge
+
+volumes:
+  postgres-data:

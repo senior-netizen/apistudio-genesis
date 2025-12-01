@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model CollaborationInvite {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  email       String
+  role        String
+  invitedBy   String?
+  status      String   @default("pending")
+  message     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  expiresAt   DateTime? @map("expires_at")
+}
+
+model CollaborationShareLink {
+  id               String   @id @default(cuid())
+  workspaceId      String   @map("workspace_id")
+  label            String
+  url              String
+  scope            String
+  status           String   @default("active")
+  requiresApproval Boolean  @default(false) @map("requires_approval")
+  usageCount       Int      @default(0) @map("usage_count")
+  maxUses          Int?     @map("max_uses")
+  createdAt        DateTime @default(now()) @map("created_at")
+  expiresAt        DateTime? @map("expires_at")
+}
+
+model CollaborationSession {
+  id           String   @id @default(cuid())
+  workspaceId  String   @map("workspace_id")
+  title        String
+  hostId       String   @map("host_id")
+  status       String   @default("scheduled")
+  startedAt    DateTime @map("started_at")
+  timezone     String
+  participants Json?
+  agenda       String?
+  createdAt    DateTime @default(now()) @map("created_at")
+}
+
+model CollaborationComment {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  userName    String   @map("user_name")
+  message     String
+  createdAt   DateTime @default(now()) @map("created_at")
+}
+
+model CollaborationActivity {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  type        String
+  actor       String?
+  message     String
+  severity    String   @default("info")
+  createdAt   DateTime @default(now()) @map("created_at")
+}
+
+model CollaborationResidency {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  region      String
+  dataCenter  String   @map("data_center")
+  primary     Boolean  @default(false)
+  status      String   @default("active")
+  cutoverAt   DateTime? @map("cutover_at")
+
+  @@unique([workspaceId, region])
+}

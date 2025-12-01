@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: squirrel-api/auth-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - configMapRef:
+                name: squirrel-config
+          env:
+            - name: PORT
+              value: "3001"
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: squirrel-config
+                  key: REDIS_URL
+            - name: SQUIRREL_INTERNAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: SQUIRREL_INTERNAL_KEY
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: AUTH_POSTGRES_URL
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: JWT_PUBLIC_KEY
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: JWT_PRIVATE_KEY
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

@@ -1,0 +1,117 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Squirrel API Studio",
+  "dateExported": "2025-11-08",
+  "version": "1.0",
+  "folders": [
+    {
+      "containerId": "root",
+      "name": "API",
+      "_id": "f_api",
+      "created": 1731050000000,
+      "sortNum": 10000
+    },
+    {
+      "containerId": "root",
+      "name": "Backend (via Proxy)",
+      "_id": "f_backend",
+      "created": 1731050001000,
+      "sortNum": 20000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "r_api_health",
+      "colId": "c_squirrel",
+      "containerId": "f_api",
+      "name": "API Health",
+      "url": "{{base}}/api/health",
+      "method": "GET",
+      "created": 1731050010000,
+      "modified": 1731050010000,
+      "sortNum": 10100,
+      "headers": [],
+      "params": []
+    },
+    {
+      "_id": "r_link_status",
+      "colId": "c_squirrel",
+      "containerId": "f_api",
+      "name": "Link Status (API → Backend)",
+      "url": "{{base}}/api/system/link-status",
+      "method": "GET",
+      "created": 1731050015000,
+      "modified": 1731050015000,
+      "sortNum": 10200,
+      "headers": [],
+      "params": []
+    },
+    {
+      "_id": "r_backend_health",
+      "colId": "c_squirrel",
+      "containerId": "f_backend",
+      "name": "Backend Health (via Proxy)",
+      "url": "{{base}}/studio/health",
+      "method": "GET",
+      "created": 1731050020000,
+      "modified": 1731050020000,
+      "sortNum": 20100,
+      "headers": [],
+      "params": []
+    },
+    {
+      "_id": "r_register",
+      "colId": "c_squirrel",
+      "containerId": "f_backend",
+      "name": "Register (Backend)",
+      "url": "{{base}}/studio/auth/register",
+      "method": "POST",
+      "created": 1731050030000,
+      "modified": 1731050030000,
+      "sortNum": 20200,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "x-csrf-token", "value": "{{csrf}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"displayName\": \"{{displayName}}\",\n  \"workspaceName\": \"{{workspaceName}}\"\n}"
+      }
+    },
+    {
+      "_id": "r_login",
+      "colId": "c_squirrel",
+      "containerId": "f_backend",
+      "name": "Login (Backend)",
+      "url": "{{base}}/studio/auth/login",
+      "method": "POST",
+      "created": 1731050040000,
+      "modified": 1731050040000,
+      "sortNum": 20300,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "x-csrf-token", "value": "{{csrf}}" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+      }
+    },
+    {
+      "_id": "r_projects_list",
+      "colId": "c_squirrel",
+      "containerId": "f_backend",
+      "name": "Projects List (Protected)",
+      "url": "{{base}}/studio/projects",
+      "method": "GET",
+      "created": 1731050050000,
+      "modified": 1731050050000,
+      "sortNum": 20400,
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "params": []
+    }
+  ]
+}
+

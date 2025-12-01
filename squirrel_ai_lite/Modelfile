@@ -1,0 +1,4 @@
+FROM ./squirrel_ai_core_lite
+TEMPLATE "### Instruction:\n{{prompt}}\n### Response:"
+PARAMETER temperature 0.6
+PARAMETER top_p 0.9

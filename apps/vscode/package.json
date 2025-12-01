@@ -1,0 +1,128 @@
+{
+  "name": "apistudio-vscode",
+  "displayName": "Squirrel API Studio",
+  "description": "Squirrel API Studio VS Code companion for crafting and running API workflows.",
+  "version": "0.1.0",
+  "publisher": "squirrellabs",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:apistudio.workspaces",
+    "onCommand:apistudio.openStudio",
+    "onCommand:apistudio.refreshWorkspaces",
+    "onCommand:apistudio.configureCredentials",
+    "onCommand:apistudio.signOut",
+    "onStartupFinished"
+  ],
+  "main": "./dist/apps/vscode/src/extension.js",
+  "files": [
+    "dist/**",
+    "media/**",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/squirrel-labs/squirrel-api-studio"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "apistudio.openStudio",
+        "title": "Squirrel API Studio: Open Workspace",
+        "category": "Squirrel API Studio",
+        "icon": {
+          "light": "./media/squirrel.svg",
+          "dark": "./media/squirrel.svg"
+        }
+      },
+      {
+        "command": "apistudio.refreshWorkspaces",
+        "title": "Squirrel API Studio: Refresh Workspaces",
+        "category": "Squirrel API Studio",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "apistudio.configureCredentials",
+        "title": "Squirrel API Studio: Configure Credentials",
+        "category": "Squirrel API Studio",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "apistudio.signOut",
+        "title": "Squirrel API Studio: Sign Out",
+        "category": "Squirrel API Studio",
+        "icon": "$(sign-out)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "apistudio",
+          "title": "Squirrel Studio",
+          "icon": "./media/squirrel.svg"
+        }
+      ]
+    },
+    "views": {
+      "apistudio": [
+        {
+          "id": "apistudio.workspaces",
+          "name": "Workspaces"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "apistudio.workspaces",
+        "contents": "Discover curated API workspaces with Squirrel Studio.\n[Open Studio](command:apistudio.openStudio)"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Squirrel API Studio",
+        "properties": {
+          "apistudio.apiBaseUrl": {
+            "type": "string",
+            "default": "http://localhost:8081",
+            "description": "Base URL for the Squirrel API platform."
+          },
+          "apistudio.studioBaseUrl": {
+            "type": "string",
+            "default": "https://studio.squirrel.dev",
+            "description": "Base URL for opening workspaces in the web studio."
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "watch": "tsc --project tsconfig.json --watch",
+    "lint": "eslint src --ext .ts",
+    "prepackage": "yarn build",
+    "package": "vsce package --allow-missing-repository --no-dependencies",
+    "test": "vitest run",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "@types/vscode": "^1.85.0",
+    "eslint": "^8.55.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "@sdl/language": "workspace:*",
+    "@sdl/sdk": "workspace:*",
+    "tslib": "^2.6.2"
+  }
+}

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: squirrel-api/gateway:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3080
+          envFrom:
+            - configMapRef:
+                name: squirrel-config
+          env:
+            - name: PORT
+              value: "3080"
+            - name: SQUIRREL_INTERNAL_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: SQUIRREL_INTERNAL_KEY
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: squirrel-app-secrets
+                  key: JWT_PUBLIC_KEY
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: squirrel-config
+                  key: REDIS_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

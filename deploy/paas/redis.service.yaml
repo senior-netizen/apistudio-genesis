@@ -1,0 +1,6 @@
+name: redis
+engine: redis
+plan: standard
+version: 7
+storage: 1Gi
+persistence: true

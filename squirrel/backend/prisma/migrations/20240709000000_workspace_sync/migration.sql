@@ -1,0 +1,3 @@
+-- This migration became a no-op after consolidating the schema into
+-- 20240701000000_init. Keeping the file so Prisma's migration history
+-- remains consistent with previous deployments.

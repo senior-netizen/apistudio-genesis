@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package squirrel.common.v1;
+
+// Shared types for Auth, Workspaces, Requests gRPC services.
+
+message Empty {}
+
+message AuthTokens {
+  string accessToken = 1;
+  string refreshToken = 2;
+}
+
+message Pagination {
+  int32 page = 1;
+  int32 pageSize = 2;
+  int32 total = 3;
+}
+
+message Workspace {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string ownerId = 4;
+  string createdAt = 5;
+  string updatedAt = 6;
+}
+
+message HttpRequest {
+  string id = 1;
+  string name = 2;
+  string method = 3;
+  string url = 4;
+  map<string, string> headers = 5;
+  string body = 6;
+  string collectionId = 7;
+  string createdAt = 8;
+  string updatedAt = 9;
+}
+
+message HttpRun {
+  string runId = 1;
+  string status = 2;
+  int32 responseCode = 3;
+  string responseBody = 4;
+  int64 durationMs = 5;
+  string error = 6;
+}

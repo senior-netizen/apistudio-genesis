@@ -1,0 +1,26 @@
+name: <service-name>
+image: squirrel-api/<service-name>:v1
+plan: starter
+region: <your-region>
+port: <port>
+healthCheck:
+  path: /health
+  intervalSeconds: 30
+  timeoutSeconds: 5
+env:
+  NODE_ENV: production
+  PORT: "<port>"
+  REDIS_URL: ${REDIS_URL}
+  SQUIRREL_INTERNAL_KEY: ${SQUIRREL_INTERNAL_KEY}
+  POSTGRES_URL: ${<SERVICE>_POSTGRES_URL}
+  JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY} # required for auth service only
+  JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY} # required for auth service only
+  ENABLE_OAUTH: "true" # optional toggle
+  DEFAULT_USER_ROLE: "free" # user service only
+  HTTP_TIMEOUT_MS: "15000" # api-runner service only
+  HTTP_MAX_REDIRECTS: "5" # api-runner service only
+  OPENAI_API_KEY: ${OPENAI_API_KEY} # ai service only
+  EMBEDDINGS_MODEL: text-embedding-3-large # ai service only
+  FCM_SERVICE_ACCOUNT_KEY: ${FCM_SERVICE_ACCOUNT_KEY} # notifications service only
+  SMTP_URL: ${SMTP_URL} # notifications service only
+  S3_BUCKET: request-logs # logs service only

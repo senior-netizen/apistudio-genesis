@@ -1,0 +1,29 @@
+name: gateway
+image: squirrel-api/gateway:v1
+plan: standard
+region: <your-region>
+port: 3080
+healthCheck:
+  path: /health
+  intervalSeconds: 30
+  timeoutSeconds: 5
+  unhealthyThreshold: 3
+  healthyThreshold: 1
+env:
+  NODE_ENV: production
+  REDIS_URL: ${REDIS_URL}
+  SQUIRREL_INTERNAL_KEY: ${SQUIRREL_INTERNAL_KEY}
+  JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+  AUTH_SERVICE_URL: http://auth-service.internal:3001
+  USER_SERVICE_URL: http://user-service.internal:3002
+  WORKSPACE_SERVICE_URL: http://workspace-service.internal:3003
+  API_RUNNER_SERVICE_URL: http://api-runner-service.internal:3004
+  AI_SERVICE_URL: http://ai-service.internal:3005
+  BILLING_SERVICE_URL: http://billing-service.internal:3006
+  NOTIFICATIONS_SERVICE_URL: http://notifications-service.internal:3007
+  LOGS_SERVICE_URL: http://logs-service.internal:3008
+  RATE_LIMIT_POINTS: "1000"
+  RATE_LIMIT_DURATION: "60"
+scaling:
+  minInstances: 1
+  maxInstances: 5

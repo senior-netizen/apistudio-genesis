@@ -1,0 +1,1 @@
+export { sdlTailwindPreset } from './preset';

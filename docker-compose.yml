@@ -1,0 +1,107 @@
+x-restart: &restart
+  restart: unless-stopped
+
+services:
+  gateway:
+    image: nginx:alpine
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./config/nginx/gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    <<: *restart
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      network: host
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    environment:
+      NODE_ENV: production
+    expose:
+      - "80"
+    <<: *restart
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./squirrel/backend/Dockerfile
+      network: host
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      PORT: ${BACKEND_PORT:-8081}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-squirrel}:${POSTGRES_PASSWORD:-squirrel}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-squirrel}?schema=public
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+      WS_REDIS_HOST: ${REDIS_HOST:-redis}
+      WS_REDIS_PORT: ${REDIS_PORT:-6379}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://gateway}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_dotenv}
+    expose:
+      - "${BACKEND_PORT:-8081}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    <<: *restart
+
+  backend-worker:
+    build:
+      context: .
+      dockerfile: ./squirrel/backend/Dockerfile
+      network: host
+    command: ["node", "dist/workers/run.worker.js"]
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-squirrel}:${POSTGRES_PASSWORD:-squirrel}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-squirrel}?schema=public
+      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
+      WS_REDIS_HOST: ${REDIS_HOST:-redis}
+      WS_REDIS_PORT: ${REDIS_PORT:-6379}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_dotenv}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    <<: *restart
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-squirrel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-squirrel}
+      POSTGRES_DB: ${POSTGRES_DB:-squirrel}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    <<: *restart
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "no"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    <<: *restart
+
+volumes:
+  postgres_data:
+  redis_data:

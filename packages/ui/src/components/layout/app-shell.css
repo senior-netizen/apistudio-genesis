@@ -1,0 +1,24 @@
+.ui-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.4) transparent; /* thumb, track */
+}
+
+.ui-sidebar-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ui-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ui-sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.4); /* slate-500/40 */
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.ui-sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.6);
+}
+

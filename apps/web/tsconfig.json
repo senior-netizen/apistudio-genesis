@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@sdl/sync-core": ["../../packages/sync-core/src"],
+      "@sdl/sync-core/*": ["../../packages/sync-core/src/*"],
+      "@sdl/sync-client": ["../../packages/sync-client/src"],
+      "@sdl/sync-client/*": ["../../packages/sync-client/src/*"],
+      "@sdl/sync-client/react": ["../../packages/sync-client/src/react/index.tsx"],
+      "@sdl/ui": ["../../packages/ui/src/index.ts"],
+      "@sdl/ui/*": ["../../packages/ui/src/*"],
+      "@sdl/ui/command-palette": ["../../packages/ui/command-palette/index.ts"],
+      "@sdl/ui/command-palette/*": ["../../packages/ui/command-palette/*"],
+      "zustand": ["./src/vendor/zustand/index.ts"],
+      "zustand/middleware": ["./src/vendor/zustand/middleware/index.ts"],
+      "zustand/middleware/immer": ["./src/vendor/zustand/middleware/immer.ts"],
+      "idb": ["./src/vendor/idb.ts"],
+      "react-syntax-highlighter": ["./src/vendor/react-syntax-highlighter.tsx"],
+      "ulidx": ["./src/vendor/ulidx.ts"],
+      "@sdl/request-runner": ["../../libs/@sdl/request-runner/src/index.ts"],
+      "@sdl/request-runner/*": ["../../libs/@sdl/request-runner/src/*"]
+    },
+    "types": ["vite/client", "jest"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noImplicitAny": false
+  },
+  "include": ["src", "tailwind.config.ts"]
+}

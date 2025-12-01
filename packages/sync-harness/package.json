@@ -1,0 +1,14 @@
+{
+  "name": "@sdl/sync-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pretest": "yarn workspace @sdl/sync-core build",
+    "test": "node --test \"src/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "@automerge/automerge": "^2.1.5",
+    "@sdl/sync-core": "workspace:*"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@sdl/sync-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --sourcemap --clean --out-dir dist --target es2021",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@automerge/automerge": "^2.1.5",
+    "base64-arraybuffer": "^1.0.2",
+    "pako": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/pako": "^2.0.4",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.3"
+  }
+}

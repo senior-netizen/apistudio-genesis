@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  font-family: 'SF Pro Display', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.glass-panel {
+  @apply backdrop-blur-xl bg-surface/90 dark:bg-surface-dark/90 border border-white/20 dark:border-white/10 shadow-glass rounded-glass;
+}

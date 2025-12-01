@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'legacy-api'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:4000
+        labels:
+          service: api-legacy
+  - job_name: 'squirrel-backend'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:8081
+        labels:
+          service: squirrel-backend

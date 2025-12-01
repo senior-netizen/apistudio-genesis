@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: squirrel
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: ghcr.io/squirrel/gateway:latest
+          envFrom:
+            - secretRef:
+                name: gateway-env
+          ports:
+            - containerPort: 3080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: squirrel
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 80
+      targetPort: 3080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gateway
+  namespace: squirrel
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 80

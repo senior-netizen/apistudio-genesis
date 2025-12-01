@@ -1,0 +1,3 @@
+-- No-op placeholder. Collaboration tables were added directly in
+-- 20240701000000_init so this migration no longer needs to create
+-- additional objects.

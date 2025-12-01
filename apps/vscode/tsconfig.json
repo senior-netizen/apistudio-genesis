@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "noEmit": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vscode"],
+    "sourceMap": true,
+    "inlineSources": true,
+    "resolveJsonModule": true,
+    "baseUrl": "../..",
+    "paths": {
+      "@sdl/sdk": ["packages/sdk/src/index.ts"],
+      "@sdl/sdk/*": ["packages/sdk/src/*"],
+      "@sdl/sdk/auth": ["packages/sdk/src/auth/index.ts"],
+      "@sdl/sdk/auth/*": ["packages/sdk/src/auth/*"],
+      "@sdl/sync-client/adapters/file": ["packages/sync-client/src/adapters/file.ts"],
+      "@sdl/sync-core": ["packages/sync-core/src"],
+      "@sdl/sync-core/*": ["packages/sync-core/src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", ".vscode-test"]
+}

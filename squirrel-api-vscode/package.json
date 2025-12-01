@@ -1,0 +1,75 @@
+{
+  "name": "squirrel-api-vscode",
+  "displayName": "Squirrel API Studio",
+  "publisher": "squirrel",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:squirrel.openStudio",
+    "onView:@squirrel/vscode/sidebar"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "squirrel.openStudio",
+        "title": "Squirrel API Studio: Open",
+        "category": "Squirrel"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "squirrel.openStudio",
+          "when": "editorHasSelection",
+          "group": "navigation@10"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "squirrelStudio",
+          "title": "Squirrel Studio",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "squirrelStudio": [
+        {
+          "type": "webview",
+          "id": "@squirrel/vscode/sidebar",
+          "name": "Squirrel Control Center"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "dev:webview": "cd webview-ui && vite build --watch",
+    "build:webview": "cd webview-ui && vite build",
+    "package": "vsce package",
+    "test:auth": "vitest run"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "graphql-request": "^6.1.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.3.3",
+    "vsce": "^2.14.0",
+    "vitest": "^1.0.4",
+    "@redhat-developer/vscode-extension-tester": "^5.0.0"
+  }
+}

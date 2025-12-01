@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@sdl/ui": ["../../packages/ui/src/index.ts"],
+      "@sdl/ui/*": ["../../packages/ui/src/*"],
+      "zustand": ["./src/vendor/zustand/index.ts"],
+      "zustand/middleware": ["./src/vendor/zustand/middleware/index.ts"],
+      "zustand/middleware/immer": ["./src/vendor/zustand/middleware/immer.ts"],
+      "idb": ["./src/vendor/idb.ts"],
+      "react-syntax-highlighter": ["./src/vendor/react-syntax-highlighter.tsx"],
+      "ulidx": ["./src/vendor/ulidx.ts"],
+      "@sdl/request-runner": ["../../libs/@sdl/request-runner/src/index.ts"],
+      "@sdl/request-runner/*": ["../../libs/@sdl/request-runner/src/*"]
+    },
+    "types": ["vite/client"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src", "tailwind.config.ts", "vitest.setup.ts"]
+}

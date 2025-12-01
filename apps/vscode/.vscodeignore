@@ -1,0 +1,9 @@
+.vscode/**
+node_modules/**
+tsconfig.json
+README.md
+src/**
+**/*.map
+../../.env.example
+../../.git/**
+../../**
