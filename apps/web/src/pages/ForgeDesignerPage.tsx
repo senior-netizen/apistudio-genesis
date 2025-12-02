@@ -13,25 +13,10 @@ type Endpoint = {
 const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 export function ForgeDesignerPage() {
-  const [schemaVersion, setSchemaVersion] = useState('v1.3.0');
-  const [endpoints, setEndpoints] = useState<Endpoint[]>([
-    {
-      id: 1,
-      method: 'GET',
-      path: '/invoices',
-      description: 'Returns paginated invoice summaries with lightweight hydration.',
-      mocked: true
-    },
-    {
-      id: 2,
-      method: 'POST',
-      path: '/invoices',
-      description: 'Creates a new invoice and schedules reconciliation jobs.',
-      mocked: false
-    }
-  ]);
+  const [schemaVersion, setSchemaVersion] = useState('');
+  const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
 
-  const [draft, setDraft] = useState({ method: 'GET', path: '', description: '', mocked: true });
+  const [draft, setDraft] = useState({ method: 'GET', path: '', description: '', mocked: false });
 
   const coverage = useMemo(() => {
     if (!endpoints.length) return 0;
@@ -54,7 +39,7 @@ export function ForgeDesignerPage() {
       }
     ]);
 
-    setDraft({ method: 'GET', path: '', description: '', mocked: true });
+    setDraft({ method: 'GET', path: '', description: '', mocked: false });
   };
 
   const toggleMock = (id: number) => {
@@ -108,20 +93,26 @@ export function ForgeDesignerPage() {
         </div>
 
         <div className="mt-6 space-y-4">
-          {endpoints.map((endpoint) => (
-            <div key={endpoint.id} className="rounded-xl border border-border/50 bg-white/70 p-4 text-sm shadow-sm dark:bg-white/10">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-foreground">
-                  {endpoint.method}
-                </span>
-                <code className="font-mono text-sm text-foreground">{endpoint.path}</code>
-                <Button size="sm" variant={endpoint.mocked ? 'primary' : 'subtle'} onClick={() => toggleMock(endpoint.id)}>
-                  {endpoint.mocked ? 'Mock enabled' : 'Enable mock'}
-                </Button>
+          {endpoints.length === 0 ? (
+            <Card className="border border-dashed border-border/60 bg-background/60 p-6 text-sm text-muted">
+              <p>No endpoints loaded yet. Connect a real specification source or add your first endpoint below.</p>
+            </Card>
+          ) : (
+            endpoints.map((endpoint) => (
+              <div key={endpoint.id} className="rounded-xl border border-border/50 bg-white/70 p-4 text-sm shadow-sm dark:bg-white/10">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-foreground">
+                    {endpoint.method}
+                  </span>
+                  <code className="font-mono text-sm text-foreground">{endpoint.path}</code>
+                  <Button size="sm" variant={endpoint.mocked ? 'primary' : 'subtle'} onClick={() => toggleMock(endpoint.id)}>
+                    {endpoint.mocked ? 'Mock enabled' : 'Enable mock'}
+                  </Button>
+                </div>
+                <p className="mt-3 text-muted">{endpoint.description}</p>
               </div>
-              <p className="mt-3 text-muted">{endpoint.description}</p>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         <form onSubmit={addEndpoint} className="mt-8 space-y-4 rounded-xl border border-dashed border-border/60 p-4">

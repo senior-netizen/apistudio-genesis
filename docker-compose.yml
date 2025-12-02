@@ -73,6 +73,29 @@ services:
         condition: service_healthy
     <<: *restart
 
+  support-service:
+    build:
+      context: .
+      dockerfile: ./squirrel/microservices/support-service/Dockerfile
+      network: host
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DB_HOST: ${POSTGRES_HOST:-postgres}
+      DB_PORT: ${POSTGRES_PORT:-5432}
+      DB_USERNAME: ${POSTGRES_USER:-squirrel}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-squirrel}
+      DB_DATABASE: ${POSTGRES_DB:-squirrel}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_dotenv}
+    expose:
+      - "3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    <<: *restart
+
   postgres:
     image: postgres:15-alpine
     environment:

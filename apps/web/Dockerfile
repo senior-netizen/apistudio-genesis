@@ -9,6 +9,9 @@ ARG HTTPS_PROXY
 ARG NO_PROXY
 ENV HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY NO_PROXY=$NO_PROXY \
     http_proxy=$HTTP_PROXY https_proxy=$HTTPS_PROXY no_proxy=$NO_PROXY
+ENV NPM_CONFIG_REGISTRY=http://registry.npmjs.org \
+    YARN_NPM_REGISTRY_SERVER=http://registry.npmjs.org \
+    NPM_CONFIG_STRICT_SSL=false
 
 # Use repo root context (set in docker-compose) so we can reuse workspace tooling
 COPY package.json yarn.lock ./
@@ -16,7 +19,7 @@ COPY .yarn ./.yarn
 COPY . .
 
 ENV COREPACK_ENABLE_DOWNLOADS=0
-RUN printf "nodeLinker: node-modules\n" > .yarnrc.yml
+RUN printf "nodeLinker: node-modules\nunsafeHttpWhitelist:\n  - \"registry.npmjs.org\"\n" > .yarnrc.yml
 
 # Install dependencies (skip build scripts to avoid long installs)
 # Allow network fetches; proxy vars are already exported above.

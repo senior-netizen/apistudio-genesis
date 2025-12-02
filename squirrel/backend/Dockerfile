@@ -9,6 +9,9 @@ ARG HTTPS_PROXY
 ARG NO_PROXY
 ENV HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY NO_PROXY=$NO_PROXY \
     http_proxy=$HTTP_PROXY https_proxy=$HTTPS_PROXY no_proxy=$NO_PROXY
+ENV NPM_CONFIG_REGISTRY=https://registry.npmjs.org \
+    YARN_NPM_REGISTRY_SERVER=https://registry.npmjs.org \
+    NPM_CONFIG_STRICT_SSL=false
 
 # Ensure openssl and certs are present (Debian base)
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
@@ -18,17 +21,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 COPY package.json yarn.lock ./
 COPY .yarn ./.yarn
 COPY turbo.json tsconfig.json tsconfig.base.json ./
+COPY .yarnrc.yml ./
+# Drop host-specific proxy settings; container should fetch registry directly
+RUN sed -i '/^httpProxy:/d;/^httpsProxy:/d' .yarnrc.yml
 COPY apps ./apps
 COPY packages ./packages
 COPY libs ./libs
 COPY squirrel/backend ./squirrel/backend
 
 ENV COREPACK_ENABLE_DOWNLOADS=0
-RUN printf "nodeLinker: node-modules\n" > .yarnrc.yml
 
 # Install dependencies (skip build scripts to reduce install time)
 # Allow network fetches; proxy vars are already exported above.
 RUN YARN_ENABLE_IMMUTABLE_INSTALLS=false node /app/.yarn/releases/yarn-4.10.3.cjs install --mode=skip-build
+# grpc-tools skips its download when build scripts are disabled; fetch protoc manually
+RUN node /app/node_modules/@mapbox/node-pre-gyp/bin/node-pre-gyp install --directory=/app/node_modules/grpc-tools \
+    && chmod +x /app/node_modules/grpc-tools/bin/protoc /app/node_modules/grpc-tools/bin/grpc_node_plugin
 
 FROM node:20-slim AS builder
 WORKDIR /app
@@ -40,9 +48,15 @@ ARG HTTPS_PROXY
 ARG NO_PROXY
 ENV HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY NO_PROXY=$NO_PROXY \
     http_proxy=$HTTP_PROXY https_proxy=$HTTPS_PROXY no_proxy=$NO_PROXY
+ENV NPM_CONFIG_REGISTRY=https://registry.npmjs.org \
+    YARN_NPM_REGISTRY_SERVER=https://registry.npmjs.org \
+    NPM_CONFIG_STRICT_SSL=false
 COPY --from=deps /app/ ./
 
 ENV COREPACK_ENABLE_DOWNLOADS=0
+
+# Build backend workspace deps (build scripts were skipped during install)
+RUN node /app/.yarn/releases/yarn-4.10.3.cjs workspaces foreach -R --topological-dev --include @squirrel/backend run build
 
 WORKDIR /app/squirrel/backend
 RUN node /app/.yarn/releases/yarn-4.10.3.cjs prisma:generate
@@ -55,6 +69,9 @@ ARG HTTPS_PROXY
 ARG NO_PROXY
 ENV HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY NO_PROXY=$NO_PROXY \
     http_proxy=$HTTP_PROXY https_proxy=$HTTPS_PROXY no_proxy=$NO_PROXY
+ENV NPM_CONFIG_REGISTRY=https://registry.npmjs.org \
+    YARN_NPM_REGISTRY_SERVER=https://registry.npmjs.org \
+    NPM_CONFIG_STRICT_SSL=false
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

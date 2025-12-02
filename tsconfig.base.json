@@ -6,6 +6,7 @@
     "moduleResolution": "Node",
     "baseUrl": ".",
     "paths": {
+      "@sdl/language": ["packages/language/index.js"],
       "@sdl/sync-core": ["packages/sync-core/src"],
       "@sdl/sync-core/*": ["packages/sync-core/src/*"]
     },

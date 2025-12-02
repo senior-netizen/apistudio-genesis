@@ -2,8 +2,15 @@
   "name": "@sdl/language",
   "version": "0.1.0",
   "private": true,
-  "type": "commonjs",
-  "main": "./index.js",
+  "type": "module",
+  "main": "./index.cjs",
   "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs",
+      "default": "./index.mjs"
+    }
+  },
   "description": "Shared brand and language constants for Squirrel API Studio surfaces"
 }

@@ -84,7 +84,12 @@ class AuthRequestError extends Error {
 const CSRF_ENDPOINT = () => resolveApiUrl('/auth/csrf');
 
 async function ensureCsrfToken(force = false) {
-  await loadCsrfToken(CSRF_ENDPOINT(), force);
+  try {
+    await loadCsrfToken(CSRF_ENDPOINT(), force);
+  } catch (error) {
+    // Network hiccups should not force a logout; rely on any cached token instead.
+    console.warn('[auth] unable to refresh CSRF token', error);
+  }
 }
 
 async function performAuthRequest<T>(path: string, payload: Record<string, unknown>): Promise<T> {
@@ -116,6 +121,14 @@ function toStoredSession(state: Pick<AuthState, 'accessToken' | 'refreshToken' |
     refreshToken: state.refreshToken,
     user: state.user,
   };
+}
+
+function isNetworkError(error: unknown): boolean {
+  return (
+    (error instanceof TypeError && error.message.includes('fetch')) ||
+    (error as any)?.code === 'ERR_NETWORK' ||
+    (error as any)?.name === 'NetworkError'
+  );
 }
 
 export const useAuthStore = create<AuthState>(
@@ -232,22 +245,33 @@ export const useAuthStore = create<AuthState>(
         set((state) => {
           state.accessToken = data.accessToken;
           state.refreshToken = data.refreshToken;
-          if (data.user) {
-            state.user = data.user;
-          }
+          state.user = data.user ?? state.user;
           state.isAuthenticated = true;
+          state.sessionError = undefined;
         });
         persistSession(toStoredSession(get()));
         return data.accessToken;
       } catch (error) {
         console.warn('[auth] refresh failed', error);
+        const networkIssue = isNetworkError(error) || (error instanceof AuthRequestError && error.status === undefined);
+        const unauthorized = error instanceof AuthRequestError && [401, 403].includes(error.status ?? 0);
+        if (unauthorized) {
+          set((state) => {
+            state.accessToken = null;
+            state.refreshToken = null;
+            state.user = null;
+            state.isAuthenticated = false;
+            state.sessionError = 'Session expired';
+          });
+          persistSession(null);
+          return null;
+        }
+        // Keep the current session on transient/network errors and surface the message for retry.
         set((state) => {
-          state.accessToken = null;
-          state.refreshToken = null;
-          state.isAuthenticated = false;
+          state.sessionError =
+            error instanceof Error ? error.message : networkIssue ? 'Network unavailable. Will retry.' : 'Unable to refresh session';
         });
-        persistSession(null);
-        return null;
+        return get().accessToken;
       }
     },
     setSessionError(message) {

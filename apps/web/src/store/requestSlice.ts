@@ -275,25 +275,22 @@ export const createRequestSlice: StateCreator<AppState, [], [], RequestSlice> = 
       draft.preRequestOutcome = preRequestOutcome;
     });
 
-    const mockResponse = state.resolveMock(request.method, prepared.url);
     let unsubscribe: (() => void) | undefined;
     let streamBuffer = '';
 
-    if (!mockResponse) {
-      unsubscribe = requestRunner.on('request:progress', (event) => {
-        if (event.requestId !== prepared.id) return;
-        if (event.chunk) {
-          streamBuffer += event.chunk;
-        }
-        set((draft) => {
-          draft.responseStream = streamBuffer;
-          draft.responseProgress = {
-            receivedBytes: event.receivedBytes,
-            totalBytes: event.totalBytes
-          };
-        });
+    unsubscribe = requestRunner.on('request:progress', (event) => {
+      if (event.requestId !== prepared.id) return;
+      if (event.chunk) {
+        streamBuffer += event.chunk;
+      }
+      set((draft) => {
+        draft.responseStream = streamBuffer;
+        draft.responseProgress = {
+          receivedBytes: event.receivedBytes,
+          totalBytes: event.totalBytes
+        };
       });
-    }
+    });
 
     try {
       const resolvedUrl = resolveValue(request.url, {
@@ -302,19 +299,14 @@ export const createRequestSlice: StateCreator<AppState, [], [], RequestSlice> = 
         locals: []
       }).value;
 
-      const finalUrl = mockResponse ? resolvedUrl : prepared.url;
+      const finalUrl = prepared.url;
 
-      let responseSnapshot = mockResponse;
-      let runnerResult: RunnerSuccessEvent | undefined;
-
-      if (!mockResponse) {
-        runnerResult = await requestRunner.run(runnerRequest, {
-          timeoutMs: state.timeoutMs,
-          retries: state.retries,
-          variableContext
-        });
-        responseSnapshot = runnerResult.response;
-      }
+      const runnerResult = await requestRunner.run(runnerRequest, {
+        timeoutMs: state.timeoutMs,
+        retries: state.retries,
+        variableContext
+      });
+      const responseSnapshot = runnerResult.response;
 
       if (responseSnapshot) {
         const testOutcome = await runSandboxedScript(

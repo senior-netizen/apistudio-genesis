@@ -77,7 +77,7 @@ export class AuthService {
     return this.issueTokens(user.id, user.email);
   }
 
-  async login(dto: LoginDto) {
+  private async validateCredentials(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (!user) {
       throw new UnauthorizedException({ code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' });
@@ -91,6 +91,23 @@ export class AuthService {
       if (!dto.totpCode || !totpSecret || !authenticator.verify({ token: dto.totpCode, secret: totpSecret })) {
         throw new UnauthorizedException({ code: 'TOTP_REQUIRED', message: 'Valid TOTP code required' });
       }
+    }
+    return user;
+  }
+
+  async login(dto: LoginDto) {
+    const user = await this.validateCredentials(dto);
+    return this.issueTokens(user.id, user.email);
+  }
+
+  async loginWithRole(dto: LoginDto, allowedRoles: Array<'admin' | 'founder'>) {
+    const user = await this.validateCredentials(dto);
+    const resolvedRole = resolveAccountRole(user.email, user.role);
+    if (!allowedRoles.includes(resolvedRole as 'admin' | 'founder')) {
+      throw new UnauthorizedException({
+        code: 'INSUFFICIENT_ROLE',
+        message: 'Admin or founder role required',
+      });
     }
     return this.issueTokens(user.id, user.email);
   }
@@ -211,7 +228,7 @@ export class AuthService {
   async issueTokens(userId: string, emailHint?: string, sessionId?: string) {
     const account = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, role: true },
+      select: { email: true, role: true, id: true },
     });
     const email = account?.email ?? emailHint;
     if (!email) {
@@ -246,7 +263,12 @@ export class AuthService {
         } as any),
       });
     }
-    return { accessToken, refreshToken };
+    const user = {
+      id: userId,
+      email,
+      role,
+    };
+    return { accessToken, refreshToken, user };
   }
 
   private parseRefreshDays(): number {

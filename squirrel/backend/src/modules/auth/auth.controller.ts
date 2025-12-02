@@ -48,6 +48,15 @@ export class AuthController {
     return { ...tokens, csrfToken };
   }
 
+  @Post('login/admin')
+  @HttpCode(HttpStatus.OK)
+  async adminLogin(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const tokens = await this.authService.loginWithRole(dto, ['admin', 'founder']);
+    this.setAuthCookies(res, tokens.refreshToken);
+    const csrfToken = this.issueCsrf(res);
+    return { ...tokens, csrfToken };
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() dto: RefreshDto, @Res({ passthrough: true }) res: Response) {
