@@ -26,12 +26,6 @@ export const envSchema = z
     REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
     WS_REDIS_HOST: z.string().min(1).default('localhost'),
     WS_REDIS_PORT: z.coerce.number().int().positive().default(6379),
-    GRPC_PORT: z.coerce.number().int().positive().default(50051),
-    GRPC_BIND_ADDR: z.string().min(1).default('0.0.0.0'),
-    GRPC_TLS_CERT_PATH: z.string().optional(),
-    GRPC_TLS_KEY_PATH: z.string().optional(),
-    GRPC_TLS_CA_PATH: z.string().optional(),
-    GRPC_REQUIRE_CLIENT_CERT: z.coerce.boolean().default(false),
     // Treat empty string as undefined and fall back to a safe dev default
     ENCRYPTION_KEY_BASE64: z
       .union([z.string(), z.undefined()])

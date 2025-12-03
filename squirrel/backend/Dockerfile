@@ -34,9 +34,6 @@ ENV COREPACK_ENABLE_DOWNLOADS=0
 # Install dependencies (skip build scripts to reduce install time)
 # Allow network fetches; proxy vars are already exported above.
 RUN YARN_ENABLE_IMMUTABLE_INSTALLS=false node /app/.yarn/releases/yarn-4.10.3.cjs install --mode=skip-build
-# grpc-tools skips its download when build scripts are disabled; fetch protoc manually
-RUN node /app/node_modules/@mapbox/node-pre-gyp/bin/node-pre-gyp install --directory=/app/node_modules/grpc-tools \
-    && chmod +x /app/node_modules/grpc-tools/bin/protoc /app/node_modules/grpc-tools/bin/grpc_node_plugin
 
 FROM node:20-slim AS builder
 WORKDIR /app
