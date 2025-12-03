@@ -50,15 +50,6 @@ type SyncConfig = {
   presenceTtlSec: number;
 };
 
-type GrpcConfig = {
-  host: string;
-  port: number;
-  tlsCertPath?: string;
-  tlsKeyPath?: string;
-  tlsCaPath?: string;
-  requireClientCert: boolean;
-};
-
 type AppConfig = {
   nodeEnv: string;
   port: number;
@@ -74,7 +65,6 @@ type AppConfig = {
   authDeveloperBypass: boolean;
   csrfSecret: string;
   sync: SyncConfig;
-  grpc: GrpcConfig;
 };
 
 export default registerAs('app', (): AppConfig => {
@@ -150,14 +140,6 @@ export default registerAs('app', (): AppConfig => {
       vectorClockTtlSec: env.SYNC_VECTOR_CLOCK_TTL_SEC,
       divergenceThreshold: env.SYNC_VECTOR_DIVERGENCE_THRESHOLD,
       presenceTtlSec: env.SYNC_PRESENCE_TTL_SEC,
-    },
-    grpc: {
-      host: env.GRPC_BIND_ADDR,
-      port: env.GRPC_PORT,
-      tlsCertPath: env.GRPC_TLS_CERT_PATH,
-      tlsKeyPath: env.GRPC_TLS_KEY_PATH,
-      tlsCaPath: env.GRPC_TLS_CA_PATH,
-      requireClientCert: env.GRPC_REQUIRE_CLIENT_CERT,
     },
   };
 });

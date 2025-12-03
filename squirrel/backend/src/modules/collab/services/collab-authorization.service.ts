@@ -7,6 +7,7 @@ import appConfig from '../../../config/configuration';
 import { PrismaService } from '../../../infra/prisma/prisma.service';
 import { RedisService } from '../../../infra/redis/redis.service';
 import { WorkspaceRole } from '../../../infra/prisma/enums';
+import { resolveAccountRole } from '../../../common/security/owner-role.util';
 
 export type AuthenticatedSocketUser = {
   id: string;
@@ -160,9 +161,6 @@ export class CollabAuthorizationService {
   }
 
   private resolveAccountRole(email?: string | null, storedRole?: string | null) {
-    const { resolveAccountRole } = require('../../../common/security/owner-role.util') as {
-      resolveAccountRole: (email?: string | null, storedRole?: string | null) => string;
-    };
     return resolveAccountRole(email, storedRole);
   }
 }
