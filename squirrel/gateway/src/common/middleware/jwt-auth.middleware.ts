@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { elevateFounderRole } from '../../../shared/rbac/roles';
 
 @Injectable()
 export class JwtAuthMiddleware implements NestMiddleware {
@@ -83,8 +84,23 @@ export class JwtAuthMiddleware implements NestMiddleware {
           inferredRoles.push(singleRole);
         }
 
-        if (inferredRoles.length > 0) {
-          decoded['roles'] = Array.from(new Set(inferredRoles));
+        const elevated = elevateFounderRole({
+          role: typeof decoded['role'] === 'string' ? (decoded['role'] as string) : undefined,
+          isFounder: decoded['isFounder'] === true,
+        });
+
+        const normalizedRoles = new Set<string>(inferredRoles.filter(Boolean));
+        if (elevated.role) {
+          decoded['role'] = elevated.role;
+          normalizedRoles.add(elevated.role);
+        }
+        if (elevated.isFounder) {
+          decoded['isFounder'] = true;
+          normalizedRoles.add('founder');
+        }
+
+        if (normalizedRoles.size > 0) {
+          decoded['roles'] = Array.from(normalizedRoles);
         }
       }
 

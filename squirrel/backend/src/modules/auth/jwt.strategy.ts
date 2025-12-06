@@ -35,7 +35,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       select: { email: true, role: true },
     });
     const email = user?.email ?? payload.email;
-    const role = resolveAccountRole(email, user?.role ?? payload?.role);
-    return { id: payload.sub, email, role, sessionId };
+    const isFounder = payload?.isFounder === true || (user?.role ?? payload?.role) === 'founder';
+    const role = resolveAccountRole(email, user?.role ?? payload?.role, isFounder);
+    return { id: payload.sub, email, role, sessionId, isFounder: isFounder || role === 'founder' };
   }
 }

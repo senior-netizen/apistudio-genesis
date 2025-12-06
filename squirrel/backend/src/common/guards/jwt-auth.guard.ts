@@ -5,6 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { resolveAccountRole } from '../security/owner-role.util';
+import { elevateFounderRole } from '../../../../shared/rbac/roles';
 import { compare as bcryptCompare } from 'bcryptjs';
 import { Reflector } from '@nestjs/core';
 import { PUBLIC_ROUTE_KEY } from '../decorators/public-route.decorator';
@@ -77,8 +78,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       });
     }
 
-    const effectiveRole = resolveAccountRole(result.email, result.role);
+    const elevatedUser = elevateFounderRole(result as any);
+    const effectiveRole = resolveAccountRole(elevatedUser.email, elevatedUser.role, elevatedUser.isFounder);
     result.role = effectiveRole;
+    if (elevatedUser.isFounder || effectiveRole === 'founder') {
+      (result as any).isFounder = true;
+    }
     if (request) {
       request.user = result;
     }

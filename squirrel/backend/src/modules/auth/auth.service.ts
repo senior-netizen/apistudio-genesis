@@ -238,7 +238,8 @@ export class AuthService {
     const accessJti = randomUUID();
     const refreshJti = randomUUID();
     const role = resolveAccountRole(email, account?.role);
-    const payload = { sub: userId, email, role, sid, jti: accessJti } as const;
+    const isFounder = role === 'founder';
+    const payload = { sub: userId, email, role, sid, jti: accessJti, isFounder } as const;
     const accessToken = await this.jwtService.signAsync(payload);
     const refreshToken = await this.jwtService.signAsync({ ...payload, jti: refreshJti }, {
       expiresIn: this.refreshExpiresIn,
@@ -267,6 +268,7 @@ export class AuthService {
       id: userId,
       email,
       role,
+      isFounder,
     };
     return { accessToken, refreshToken, user };
   }

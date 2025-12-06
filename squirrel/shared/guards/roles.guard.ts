@@ -1,5 +1,6 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { hasRole } from '../rbac/roles';
 
 @Injectable()
 export class SharedRolesGuard implements CanActivate {
@@ -14,9 +15,18 @@ export class SharedRolesGuard implements CanActivate {
       return true;
     }
     const request = context.switchToHttp().getRequest();
-    const userRoles: string[] = request.user?.roles || [];
-    if (!userRoles.some((role) => roles.includes(role))) {
-      throw new UnauthorizedException('Insufficient role');
+    const userRoles: string[] = [];
+    const primaryRole = request.user?.role;
+    if (primaryRole) {
+      userRoles.push(String(primaryRole));
+    }
+    if (Array.isArray(request.user?.roles)) {
+      userRoles.push(...request.user.roles);
+    }
+    const uniqueRoles = Array.from(new Set(userRoles));
+    const hasRequired = uniqueRoles.some((role) => roles.some((required) => hasRole(role, required)));
+    if (!hasRequired) {
+      throw new ForbiddenException('Insufficient role');
     }
     return true;
   }

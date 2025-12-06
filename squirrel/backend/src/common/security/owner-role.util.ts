@@ -10,21 +10,28 @@ const FOUNDER_ROLE = 'founder';
 
 const getOwnerEmail = (): string | undefined => normalize(process.env.OWNER_EMAIL);
 
-export const resolveAccountRole = (email?: string | null, storedRole?: string | null): string => {
+export const resolveAccountRole = (email?: string | null, storedRole?: string | null, isFounder?: boolean | null): string => {
+  if (isFounder) {
+    return FOUNDER_ROLE;
+  }
   const ownerEmail = getOwnerEmail();
   const normalizedEmail = normalize(email);
   if (ownerEmail && normalizedEmail === ownerEmail) {
     return FOUNDER_ROLE;
   }
-  if (isReservedRole(storedRole)) {
+  const normalizedStoredRole = normalize(storedRole);
+  if (normalizedStoredRole === FOUNDER_ROLE) {
+    return FOUNDER_ROLE;
+  }
+  if (isReservedRole(normalizedStoredRole)) {
     return 'user';
   }
-  return storedRole ?? 'user';
+  return normalizedStoredRole ?? 'user';
 };
 
-const isReservedRole = (value?: string | null): boolean => {
-  const normalized = normalize(value);
-  return normalized === FOUNDER_ROLE || normalized === 'owner';
+const isReservedRole = (normalized?: string | null): boolean => {
+  const value = normalized ?? undefined;
+  return value === FOUNDER_ROLE || value === 'owner';
 };
 
 const extractRoleValue = (value: unknown): string | undefined => {
