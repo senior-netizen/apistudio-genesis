@@ -4,6 +4,7 @@ import { Button, Card } from '@sdl/ui';
 import { BillingApi } from '../../lib/api/billing';
 import { apiFetch } from '../../lib/api/client';
 import { useBetaFlags } from './useBetaFlags';
+import { can } from '@sdl/frontend/utils/roles';
 
 interface InviteRecord {
   id: string;
@@ -26,7 +27,7 @@ export default function BetaInvitesPage() {
   const [group, setGroup] = useState('');
   const [maxUses, setMaxUses] = useState(1);
   const [expiresAt, setExpiresAt] = useState('');
-  const isAdmin = profile.role === 'admin';
+  const isAdmin = can(profile ?? null, 'admin');
 
   async function loadInvites() {
     try {

@@ -44,6 +44,8 @@ import {
 } from './routes/routeConfig';
 import { WorkspaceSyncProvider } from './modules/sync/WorkspaceSyncProvider';
 import { useAuth } from './modules/auth/AuthProvider';
+import { can, getEffectiveRole } from '@sdl/frontend/utils/roles';
+import { RoleDebugger } from './components/RoleDebugger';
 
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -70,11 +72,11 @@ function routeIsActive(route: AppRoute, activePath: string) {
 function useSidebarGroups(
   activePath: string,
   navigate: ReturnType<typeof useNavigate>,
-  isAdmin: boolean,
+  currentUser: { role?: string | null; isFounder?: boolean | null } | null,
 ) {
   const accessibleRoutes = useMemo(
-    () => appRoutes.filter((route) => !route.adminOnly || isAdmin),
-    [isAdmin],
+    () => appRoutes.filter((route) => !route.adminOnly || can(currentUser, 'admin')),
+    [currentUser],
   );
 
   return useMemo<SidebarGroup[]>(() => {
@@ -116,12 +118,15 @@ function AppContent() {
 
   const lastErrorRef = useRef<string | undefined>();
 
-  const isFounderFromProfile = profile?.role === 'founder';
-  const isAdminFromProfile = profile?.role === 'admin';
+  const derivedUser = useMemo(
+    () => ({
+      role: user?.role ?? profile?.role ?? undefined,
+      isFounder: user?.isFounder ?? user?.role === 'founder' || profile?.role === 'founder',
+    }),
+    [profile?.role, user?.isFounder, user?.role],
+  );
 
-  const isFounderUser = user?.role === 'founder' || isFounderFromProfile;
-  const isAdminUser =
-    user?.role === 'admin' || isFounderUser || isAdminFromProfile;
+  const effectiveRole = getEffectiveRole(derivedUser);
 
   const handleLogout = useCallback(() => {
     void logoutUser();
@@ -135,8 +140,8 @@ function AppContent() {
 
   // ---------------- Accessible Routes -------------------
   const accessibleRoutes = useMemo(
-    () => appRoutes.filter((route) => !route.adminOnly || isAdminUser),
-    [isAdminUser],
+    () => appRoutes.filter((route) => !route.adminOnly || can(derivedUser, 'admin')),
+    [derivedUser],
   );
 
   const activeRoute =
@@ -179,8 +184,8 @@ function AppContent() {
   }, [error, pushToast]);
 
   // ---------------- Roles -------------------------------
-  const isFounder = Boolean(isFounderUser);
-  const isAdmin = !isFounder && Boolean(isAdminUser);
+  const isFounder = effectiveRole === 'founder';
+  const isAdmin = !isFounder && can(derivedUser, 'admin');
   const workspaceBadge = isFounder
     ? 'Founder'
     : isAdmin
@@ -379,12 +384,15 @@ function AppContent() {
         <AppShell
           workspaceName="Squirrel Labs"
           workspaceBadge={workspaceBadge}
-          sidebarGroups={useSidebarGroups(activePath, navigate, isAdminUser)}
+          sidebarGroups={useSidebarGroups(activePath, navigate, derivedUser)}
           commandActions={commandActions}
           contentKey={activePath}
           announcement={announcement}
           topActions={topActions}
         >
+          {import.meta.env.DEV && (
+            <RoleDebugger user={user ?? null} profile={profile ?? null} effectiveRole={effectiveRole} />
+          )}
           {initializing || !initialized ? (
             <ContentSkeleton />
           ) : (

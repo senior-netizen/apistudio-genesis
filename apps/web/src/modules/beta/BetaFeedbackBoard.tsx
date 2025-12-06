@@ -4,6 +4,7 @@ import { Button, Card } from '@sdl/ui';
 import { BillingApi } from '../../lib/api/billing';
 import { apiFetch } from '../../lib/api/client';
 import { useBetaFlags } from './useBetaFlags';
+import { can } from '@sdl/frontend/utils/roles';
 
 type FeedbackStatus = 'OPEN' | 'TRIAGED' | 'RESOLVED' | 'CLOSED';
 
@@ -27,7 +28,7 @@ const statusColumns: { key: FeedbackStatus; title: string }[] = [
 
 export default function BetaFeedbackBoard() {
   const { profile } = useBetaFlags();
-  const isAdmin = profile.role === 'admin';
+  const isAdmin = can(profile ?? null, 'admin');
   const [feedback, setFeedback] = useState<FeedbackRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
