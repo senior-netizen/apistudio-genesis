@@ -5,4 +5,5 @@ export interface JwtPayload {
   sid?: string;
   sessionId?: string;
   jti?: string;
+  isFounder?: boolean;
 }

@@ -1,5 +1,6 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { hasRole } from '../../../../../shared/rbac/roles';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -16,10 +17,20 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const userRoles: string[] = request.user?.roles || [];
+    const userRoles: string[] = [];
+    if (request.user?.role) {
+      userRoles.push(String(request.user.role));
+    }
+    if (Array.isArray(request.user?.roles)) {
+      userRoles.push(...request.user.roles);
+    }
 
-    if (!userRoles.some((role) => requiredRoles.includes(role))) {
-      throw new UnauthorizedException('Missing required role for this operation');
+    const hasRequiredRole = Array.from(new Set(userRoles)).some((role) =>
+      requiredRoles.some((required) => hasRole(role, required)),
+    );
+
+    if (!hasRequiredRole) {
+      throw new ForbiddenException('Missing required role for this operation');
     }
 
     return true;
