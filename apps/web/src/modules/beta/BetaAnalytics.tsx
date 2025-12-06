@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '@sdl/ui';
 import { apiFetch } from '../../lib/api/client';
 import { useBetaFlags } from './useBetaFlags';
+import { can } from '@sdl/frontend/utils/roles';
 
 interface AnalyticsSummary {
   totals: {
@@ -26,7 +27,7 @@ interface AnalyticsSummary {
 
 export default function BetaAnalytics() {
   const { profile } = useBetaFlags();
-  const isAdmin = profile.role === 'admin';
+  const isAdmin = can(profile ?? null, 'admin');
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

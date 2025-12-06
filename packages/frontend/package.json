@@ -1,0 +1,10 @@
+{
+  "name": "@sdl/frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "utils/roles.ts",
+  "exports": {
+    "./utils/roles": "./utils/roles.ts"
+  }
+}
