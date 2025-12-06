@@ -1,9 +1,17 @@
 export const RoleLevels: Record<string, number> = {
-  founder: 5,
-  admin: 4,
-  maintainer: 3,
-  editor: 2,
-  viewer: 1,
+  founder: 11,
+  org_owner: 10,
+  org_admin: 9,
+  org_billing: 8,
+  org_security: 7,
+  workspace_owner: 6,
+  owner: 6,
+  workspace_admin: 5,
+  admin: 5,
+  maintainer: 4,
+  editor: 3,
+  viewer: 2,
+  org_member: 1,
 };
 
 const normalizeRole = (role?: string | null): string | undefined => {
