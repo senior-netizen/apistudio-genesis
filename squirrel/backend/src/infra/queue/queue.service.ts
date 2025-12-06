@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import path from 'path';
+import * as path from 'path';
 import { QueueService as SharedQueueService, type RegisteredJob, type JobsOptions } from '@squirrel/queue';
 import { RedisService } from '../redis/redis.service';
 import appConfig from '../../config/configuration';

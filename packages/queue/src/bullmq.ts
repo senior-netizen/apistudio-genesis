@@ -1,39 +1,39 @@
 import { EventEmitter } from 'events';
 
-let bullmq: any;
+class FakeQueue<T = unknown> {
+  name: string;
+  constructor(name: string, _options?: any) {
+    this.name = name;
+  }
+  async add(name: string, data: T, _opts?: any) {
+    return { id: `${Date.now()}`, name, data } as const;
+  }
+  async getJobCounts() {
+    return { waiting: 0, active: 0, delayed: 0, completed: 0, failed: 0 } as const;
+  }
+  async close() {}
+}
+
+class FakeScheduler {
+  constructor(public readonly name: string) {}
+  async waitUntilReady() {}
+}
+
+class FakeWorker {
+  constructor(public readonly name: string, _processor: any) {
+    setImmediate(() => undefined);
+  }
+  on() {}
+}
+
+class FakeQueueEvents extends EventEmitter {}
+
+let bullmq: any = {};
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
   bullmq = require('bullmq');
 } catch {
-  class FakeQueue<T = unknown> {
-    name: string;
-    constructor(name: string, _options?: any) {
-      this.name = name;
-    }
-    async add(name: string, data: T, _opts?: any) {
-      return { id: `${Date.now()}`, name, data } as const;
-    }
-    async getJobCounts() {
-      return { waiting: 0, active: 0, delayed: 0, completed: 0, failed: 0 } as const;
-    }
-    async close() {}
-  }
-
-  class FakeScheduler {
-    constructor(public readonly name: string) {}
-    async waitUntilReady() {}
-  }
-
-  class FakeWorker {
-    constructor(public readonly name: string, _processor: any) {
-      setImmediate(() => undefined);
-    }
-    on() {}
-  }
-
-  class FakeQueueEvents extends EventEmitter {}
-
-  bullmq = { Queue: FakeQueue, QueueScheduler: FakeScheduler, QueueEvents: FakeQueueEvents, Worker: FakeWorker };
+  bullmq = {};
 }
 
 export type QueueCounts = { waiting: number; active: number; delayed: number; completed: number; failed: number };
@@ -71,9 +71,15 @@ export type QueueSchedulerConstructor = new (name: string, options?: any) => Que
 export type QueueEventsInstance = EventEmitter;
 export type QueueEventsConstructor = new (name: string, options?: any) => QueueEventsInstance;
 
-export const Queue = bullmq.Queue as QueueConstructor;
-export const QueueEvents = bullmq.QueueEvents as QueueEventsConstructor;
-export const QueueScheduler = bullmq.QueueScheduler as QueueSchedulerConstructor;
-export const Worker = bullmq.Worker as WorkerConstructor;
+const ensureConstructor = <T, F>(candidate: T | undefined, fallback: F): T | F =>
+  typeof candidate === 'function' ? candidate : fallback;
+
+export const Queue = (bullmq.Queue as QueueConstructor | undefined) ?? FakeQueue;
+export const QueueEvents = (bullmq.QueueEvents as QueueEventsConstructor | undefined) ?? FakeQueueEvents;
+export const QueueScheduler = ensureConstructor<QueueSchedulerConstructor, typeof FakeScheduler>(
+  bullmq.QueueScheduler as QueueSchedulerConstructor | undefined,
+  FakeScheduler,
+);
+export const Worker = (bullmq.Worker as WorkerConstructor | undefined) ?? FakeWorker;
 
 export type QueueBaseOptions = any;

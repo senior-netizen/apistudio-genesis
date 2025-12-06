@@ -1,35 +1,31 @@
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
-let sdk: NodeSDK | null = null;
+let tracerProvider: NodeTracerProvider | null = null;
 
 export async function startOtel(serviceName: string) {
-  if (sdk) {
-    return sdk;
+  if (tracerProvider) {
+    return { tracerProvider };
   }
-  const prometheusPort = Number(process.env.OTEL_PROMETHEUS_PORT ?? 9464);
+
+  const resource = resourceFromAttributes({
+    [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+  });
+
   const traceExporter = new OTLPTraceExporter({});
-  const prometheusExporter = new PrometheusExporter({ port: prometheusPort }, () => {
-    console.log(`Prometheus exporter started on port ${prometheusPort}`);
+  tracerProvider = new NodeTracerProvider({
+    resource,
+    spanProcessors: [new BatchSpanProcessor(traceExporter)],
   });
-  sdk = new NodeSDK({
-    traceExporter,
-    metricReader: prometheusExporter,
-    resource: new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
-    }),
-    instrumentations: [getNodeAutoInstrumentations()],
-  });
-  await sdk.start();
-  return sdk;
+  tracerProvider.register();
+
+  return { tracerProvider };
 }
 
 export async function shutdownOtel() {
-  if (!sdk) return;
-  await sdk.shutdown();
-  sdk = null;
+  await Promise.all([tracerProvider?.shutdown()].filter(Boolean) as Promise<void>[]);
+  tracerProvider = null;
 }

@@ -4,6 +4,13 @@ import { resolveApiUrl } from '../config/api';
 
 const CSRF_STORAGE_KEY = 'csrfToken';
 
+function buildCsrfEndpoints(primary = resolveApiUrl('/auth/csrf')): string[] {
+  const fallback = resolveApiUrl('/v1/auth/csrf');
+  const endpoints = new Set<string>([primary]);
+  endpoints.add(fallback);
+  return Array.from(endpoints);
+}
+
 export function getStoredCsrfToken(): string | null {
   if (typeof window === 'undefined') {
     return null;
@@ -53,21 +60,35 @@ export async function loadCsrfToken(
     setCsrfToken(stored);
     return stored;
   }
-  const token = await CsrfManager.load(endpoint, fetchImpl);
-  if (token) {
-    setCsrfToken(token);
+
+  for (const candidate of buildCsrfEndpoints(endpoint)) {
+    const token = await CsrfManager.load(candidate, fetchImpl);
+    if (token) {
+      setCsrfToken(token);
+      return token;
+    }
   }
-  return token;
+  return null;
 }
 
 export async function fetchAndPersistCsrfToken(): Promise<void> {
-  try {
-    const response = await axios.get(resolveApiUrl('/auth/csrf'), { withCredentials: true });
-    const token = response.data?.csrfToken as string | undefined;
-    if (token) {
-      setCsrfToken(token);
+  const endpoints = buildCsrfEndpoints();
+  let lastError: unknown;
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await axios.get(endpoint, { withCredentials: true });
+      const token = response.data?.csrfToken as string | undefined;
+      if (token) {
+        setCsrfToken(token);
+        return;
+      }
+    } catch (error) {
+      lastError = error;
     }
-  } catch (error) {
-    console.warn('[csrf] failed to fetch token on boot', error);
+  }
+
+  if (lastError) {
+    console.warn('[csrf] failed to fetch token on boot', lastError);
   }
 }

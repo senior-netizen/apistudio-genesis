@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const compression = require('compression');
-import { json, urlencoded, type Request, type Response } from 'express';
+import { json, urlencoded, type Request, type Response, type NextFunction } from 'express';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const cookieParser = require('cookie-parser');
 import { ConfigService } from '@nestjs/config';
@@ -25,6 +25,7 @@ import { AppLogger } from './infra/logger/app-logger.service';
 import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { brand } from '@sdl/language';
+import { AuthService } from './modules/auth/auth.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -86,18 +87,113 @@ async function bootstrap() {
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   const expressApp = app.getHttpAdapter().getInstance();
   const csrfService = app.get(CsrfService);
+  const authService = app.get(AuthService);
   const isSecure = () => (configService.get<string>('app.nodeEnv', 'development') ?? 'development') === 'production';
-  expressApp.get('/auth/csrf', (_req: Request, res: Response) => {
-    const csrfToken = csrfService.generateToken();
-    res.cookie('XSRF-TOKEN', csrfToken, {
+
+  const validateCsrf = (req: Request, res: Response): string | null => {
+    const headerToken = (req.headers['x-csrf-token'] as string | undefined)?.trim();
+    const cookieToken = (req.cookies?.['XSRF-TOKEN'] as string | undefined)?.trim();
+    const candidate = headerToken || cookieToken || null;
+    if (!candidate || !csrfService.isValid(candidate)) {
+      res
+        .status(403)
+        .json({ success: false, error: { code: 'CSRF_FORBIDDEN', message: 'Missing or invalid CSRF token', statusCode: 403 } });
+      return null;
+    }
+    if (headerToken && cookieToken && headerToken !== cookieToken) {
+      res
+        .status(403)
+        .json({ success: false, error: { code: 'CSRF_MISMATCH', message: 'CSRF token mismatch', statusCode: 403 } });
+      return null;
+    }
+    return candidate;
+  };
+
+  const issueCsrfCookie = (res: Response): string => {
+    const token = csrfService.generateToken();
+    res.cookie('XSRF-TOKEN', token, {
       httpOnly: false,
       secure: isSecure(),
       sameSite: 'lax',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
+    return token;
+  };
+
+  const setRefreshCookie = (res: Response, refreshToken: string) => {
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isSecure(),
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+    });
+  };
+
+  const loginHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!validateCsrf(req, res)) return;
+      const { email, password } = (req.body ?? {}) as { email?: string; password?: string };
+      if (!email || !password) {
+        res
+          .status(400)
+          .json({ success: false, error: { code: 'INVALID_BODY', message: 'email and password are required', statusCode: 400 } });
+        return;
+      }
+      const tokens = await authService.login({ email, password });
+      setRefreshCookie(res, tokens.refreshToken);
+      const csrfToken = issueCsrfCookie(res);
+      res.json({ ...tokens, csrfToken });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  const registerHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!validateCsrf(req, res)) return;
+      const { email, password, displayName } = (req.body ?? {}) as {
+        email?: string;
+        password?: string;
+        displayName?: string;
+        workspaceName?: string;
+      };
+      if (!email || !password) {
+        res
+          .status(400)
+          .json({ success: false, error: { code: 'INVALID_BODY', message: 'email and password are required', statusCode: 400 } });
+        return;
+      }
+      const workspaceName =
+        req.body?.workspaceName ||
+        displayName ||
+        (typeof email === 'string' ? email.split('@')[0] || 'workspace' : 'workspace');
+      const safeDisplayName =
+        displayName || workspaceName || (typeof email === 'string' ? email.split('@')[0] || 'User' : 'User');
+      const tokens = await authService.register({
+        email,
+        password,
+        displayName: safeDisplayName,
+        workspaceName,
+      });
+      setRefreshCookie(res, tokens.refreshToken);
+      const csrfToken = issueCsrfCookie(res);
+      res.json({ ...tokens, csrfToken });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  expressApp.get('/auth/csrf', (_req: Request, res: Response) => {
+    const csrfToken = issueCsrfCookie(res);
     res.json({ csrfToken });
   });
+  // Fallback handlers to serve auth in case the main router chain rejects earlier
+  expressApp.post('/v1/auth/login', loginHandler);
+  expressApp.post('/auth/login', loginHandler);
+  expressApp.post('/v1/auth/register', registerHandler);
+  expressApp.post('/auth/register', registerHandler);
   const emitHealthPayload = (request: Request) => ({
     success: true,
     data: {

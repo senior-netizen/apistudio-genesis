@@ -5,6 +5,11 @@ import path from 'node:path';
 import { createManualChunks } from '../../config/vite.manual-chunks';
 
 const requestRunnerPath = path.resolve(__dirname, '../../libs/@sdl/request-runner/src/index.ts');
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? process.env.VITE_API_URL ?? 'http://localhost:8081';
+
+// Allow turning manual chunking back on if we want to profile bundle splits again.
+const manualChunks =
+  process.env.VITE_ENABLE_MANUAL_CHUNKS === 'true' ? createManualChunks() : undefined;
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -31,36 +36,37 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: createManualChunks()
+        // Disabled by default because the vendor-react/vendor chunks formed a cycle
+        // that left React undefined at runtime (createContext blew up). Re-enable
+        // via VITE_ENABLE_MANUAL_CHUNKS=true if we need the old splits.
+        ...(manualChunks ? { manualChunks } : {})
       }
     }
   },
-    server: {
-      port: 5173,
-      proxy: {
-        // Proxy API requests to the unified Nest backend during development
-        '/v1': {
-          target: 'http://localhost:8080',
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/v1\b/, '/api/v1'),
-        },
-        '/auth': {
-          target: 'http://localhost:8080',
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/auth\b/, '/api/v1/auth'),
-        },
-        '/api': {
-          target: 'http://localhost:8080',
-          changeOrigin: true,
-          secure: false,
-        },
-        '/ws': {
-          target: 'http://localhost:8080',
-          changeOrigin: true,
-          secure: false,
-          ws: true,
+  server: {
+    port: 5173,
+    proxy: {
+      // Proxy API requests to the backend during development (defaults to 8081)
+      '/v1': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+      '/auth': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+      '/ws': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        secure: false,
+        ws: true,
       },
     },
   },
