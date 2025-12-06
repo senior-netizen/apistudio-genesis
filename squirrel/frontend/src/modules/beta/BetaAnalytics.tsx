@@ -26,7 +26,7 @@ interface AnalyticsSummary {
 
 export default function BetaAnalytics() {
   const { profile } = useBetaFlags();
-  const isAdmin = profile.role === 'admin';
+  const hasAdminAccess = profile.role === 'admin' || profile.role === 'founder';
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,20 +45,20 @@ export default function BetaAnalytics() {
         setLoading(false);
       }
     }
-    if (isAdmin) {
+    if (hasAdminAccess) {
       void load();
     } else {
       setSummary(null);
       setLoading(false);
       setError(null);
     }
-  }, [isAdmin]);
+  }, [hasAdminAccess]);
 
-  if (!isAdmin) {
+  if (!hasAdminAccess) {
     return (
       <Card className="mx-auto mt-10 max-w-xl border border-border/60 bg-background/95 p-6 text-center">
-        <h2 className="text-lg font-semibold">Admin access required</h2>
-        <p className="mt-2 text-sm text-muted">Only administrators can view beta analytics.</p>
+        <h2 className="text-lg font-semibold">Elevated access required</h2>
+        <p className="mt-2 text-sm text-muted">Only founders or administrators can view beta analytics.</p>
       </Card>
     );
   }

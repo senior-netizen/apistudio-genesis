@@ -26,7 +26,7 @@ export default function BetaInvitesPage() {
   const [group, setGroup] = useState('');
   const [maxUses, setMaxUses] = useState(1);
   const [expiresAt, setExpiresAt] = useState('');
-  const isAdmin = profile.role === 'admin';
+  const hasAdminAccess = profile.role === 'admin' || profile.role === 'founder';
 
   const loadInvites = async () => {
     try {
@@ -44,14 +44,14 @@ export default function BetaInvitesPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (hasAdminAccess) {
       void loadInvites();
     } else {
       setInvites([]);
       setLoading(false);
       setError(null);
     }
-  }, [isAdmin]);
+  }, [hasAdminAccess]);
 
   const createInvites = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,11 +85,11 @@ export default function BetaInvitesPage() {
     }
   };
 
-  if (!isAdmin) {
+  if (!hasAdminAccess) {
     return (
       <Card className="mx-auto mt-10 max-w-xl border border-border/60 bg-background/95 p-6 text-center">
-        <h2 className="text-lg font-semibold">Admin access required</h2>
-        <p className="mt-2 text-sm text-muted">Only administrators can manage beta invites.</p>
+        <h2 className="text-lg font-semibold">Elevated access required</h2>
+        <p className="mt-2 text-sm text-muted">Only founders or administrators can manage beta invites.</p>
       </Card>
     );
   }

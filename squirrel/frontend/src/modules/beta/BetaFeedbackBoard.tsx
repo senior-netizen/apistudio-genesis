@@ -27,7 +27,7 @@ const statusColumns: { key: FeedbackStatus; title: string }[] = [
 
 export default function BetaFeedbackBoard() {
   const { profile } = useBetaFlags();
-  const isAdmin = profile.role === 'admin';
+  const hasAdminAccess = profile.role === 'admin' || profile.role === 'founder';
   const [feedback, setFeedback] = useState<FeedbackRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,14 +49,14 @@ export default function BetaFeedbackBoard() {
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (hasAdminAccess) {
       void loadFeedback();
     } else {
       setFeedback([]);
       setLoading(false);
       setError(null);
     }
-  }, [isAdmin]);
+  }, [hasAdminAccess]);
 
   const updateStatus = async (id: string, status: FeedbackStatus) => {
     setUpdating(id);
@@ -86,11 +86,11 @@ export default function BetaFeedbackBoard() {
     }));
   }, [feedback]);
 
-  if (!isAdmin) {
+  if (!hasAdminAccess) {
     return (
       <Card className="mx-auto mt-10 max-w-xl border border-border/60 bg-background/95 p-6 text-center">
-        <h2 className="text-lg font-semibold">Admin access required</h2>
-        <p className="mt-2 text-sm text-muted">Only administrators can triage beta feedback.</p>
+        <h2 className="text-lg font-semibold">Elevated access required</h2>
+        <p className="mt-2 text-sm text-muted">Only founders or administrators can triage beta feedback.</p>
       </Card>
     );
   }

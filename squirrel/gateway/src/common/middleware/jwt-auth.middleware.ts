@@ -65,9 +65,26 @@ export class JwtAuthMiddleware implements NestMiddleware {
       const decoded = jwt.verify(token, secret) as Record<string, unknown>;
 
       if (decoded) {
-        const roles = decoded['roles'];
-        if (roles && !Array.isArray(roles)) {
-          decoded['roles'] = [roles];
+        const normalizeRole = (value: unknown) => (typeof value === 'string' ? value.toLowerCase() : undefined);
+        const claimRoles = decoded['roles'];
+        const inferredRoles: string[] = [];
+
+        if (Array.isArray(claimRoles)) {
+          inferredRoles.push(...claimRoles.map(normalizeRole).filter(Boolean) as string[]);
+        } else if (claimRoles) {
+          const normalized = normalizeRole(claimRoles);
+          if (normalized) {
+            inferredRoles.push(normalized);
+          }
+        }
+
+        const singleRole = normalizeRole(decoded['role']);
+        if (singleRole) {
+          inferredRoles.push(singleRole);
+        }
+
+        if (inferredRoles.length > 0) {
+          decoded['roles'] = Array.from(new Set(inferredRoles));
         }
       }
 
