@@ -94,7 +94,10 @@ function escapeForRegex(input: string): string {
 
 export function matchPattern(pattern: string, value: string): boolean {
   if (pattern === '*') return true;
-  const regex = new RegExp(`^${escapeForRegex(pattern).replace(/\\\*/g, '.*')}$`);
+
+  const escapedSegments = pattern.split('*').map((segment) => escapeForRegex(segment));
+  const regex = new RegExp(`^${escapedSegments.join('.*')}$`);
+
   return regex.test(value);
 }
 
