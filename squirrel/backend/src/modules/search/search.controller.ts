@@ -12,7 +12,11 @@ export class SearchController {
   constructor(private readonly search: SearchService) {}
 
   @Get()
-  async searchQuery(@CurrentUser() user: { id: string }, @Query('workspaceId') workspaceId: string, @Query('q') q: string) {
-    return this.search.search(workspaceId, q);
+  async searchQuery(
+    @CurrentUser() user: { id: string; role?: string },
+    @Query('workspaceId') workspaceId: string,
+    @Query('q') q: string,
+  ) {
+    return this.search.search(user, q, workspaceId);
   }
 }
