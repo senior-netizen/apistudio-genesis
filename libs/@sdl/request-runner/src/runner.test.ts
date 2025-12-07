@@ -79,4 +79,22 @@ describe('RequestRunner', () => {
     expect(success.response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it('records byte length accurately for multibyte responses', async () => {
+    const body = '€uro';
+    const bytes = new TextEncoder().encode(body).byteLength;
+    const fetchMock = vi.fn(async () =>
+      new Response(body, {
+        status: 200,
+        headers: { 'content-type': 'text/plain' }
+      })
+    );
+
+    const runner = new RequestRunner({ fetchImplementation: fetchMock, historyStorage: noopStorage });
+
+    const result = await runner.run({ method: 'GET', url: 'https://example.com/unicode' });
+
+    expect(result.response.body).toBe(body);
+    expect(result.response.size).toBe(bytes);
+  });
 });

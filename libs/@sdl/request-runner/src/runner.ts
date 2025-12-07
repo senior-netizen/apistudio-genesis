@@ -409,7 +409,7 @@ export class RequestRunner {
           if (value) {
             firstByte = firstByte === start ? now() : firstByte;
             const chunk = decoder.decode(value, { stream: !done });
-            receivedBytes += chunk.length;
+            receivedBytes += value.byteLength;
             receivedText += chunk;
             const progress: RunnerProgressEvent = {
               requestId,
@@ -424,8 +424,11 @@ export class RequestRunner {
         }
         receivedText += decoder.decode();
       } else {
-        receivedText = await response.text();
-        receivedBytes = receivedText.length;
+        const Decoder = DecoderCtor ?? TextDecoder;
+        const buffer = await response.arrayBuffer();
+        receivedBytes = buffer.byteLength;
+        const decoder = new Decoder();
+        receivedText = decoder.decode(buffer);
       }
 
       const end = now();
