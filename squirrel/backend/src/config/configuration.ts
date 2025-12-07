@@ -26,6 +26,7 @@ type FeatureFlags = {
   rootModeEnabled: boolean;
   adminGlobalSearchEnabled: boolean;
   securityCenterEnabled: boolean;
+  emergencyRotationEnabled: boolean;
 };
 
 type OwnerConfig = {
@@ -137,6 +138,7 @@ export default registerAs('app', (): AppConfig => {
       rootModeEnabled: env.ROOT_MODE_ENABLED,
       adminGlobalSearchEnabled: env.ADMIN_GLOBAL_SEARCH_ENABLED,
       securityCenterEnabled: env.SECURITY_CENTER_ENABLED,
+      emergencyRotationEnabled: env.EMERGENCY_ROTATION_ENABLED,
     },
     billing: {
       paynowIntegrationId: env.PAYNOW_INTEGRATION_ID,

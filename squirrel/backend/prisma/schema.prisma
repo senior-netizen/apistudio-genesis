@@ -218,6 +218,21 @@ model AdminApiKey {
   @@index([createdById])
 }
 
+model RotationBatch {
+  id           String   @id @default(cuid())
+  scope        String
+  reason       String?
+  triggeredBy  String   @map("triggered_by")
+  workspaceId  String?  @map("workspace_id")
+  orgId        String?  @map("org_id")
+  regionCode   String?  @map("region_code")
+  keysBefore   Json     @map("keys_before")
+  keysAfter    Json     @map("keys_after")
+  completed    Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  rolledBackAt DateTime? @map("rolled_back_at")
+}
+
 model ApiUsageLog {
   id          String   @id @default(cuid())
   apiKey      ApiKey   @relation(fields: [apiKeyId], references: [id])

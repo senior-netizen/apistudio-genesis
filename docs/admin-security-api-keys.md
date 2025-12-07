@@ -56,3 +56,18 @@ The Admin Security Center should expose “API Keys & Tokens” with:
 
 ## Backward Compatibility
 If `apiKeys.enabled` is false, hide the UI module and disable endpoints while keeping existing keys valid.
+
+## Emergency Rotation
+
+Emergency rotations are available behind `SECURITY_CENTER_ENABLED` and `EMERGENCY_ROTATION_ENABLED` feature flags. When disabled,
+the endpoints return 404 and the UI hides the module. When enabled, the following endpoints require MFA, device trust, policy
+approval, and `admin:rotate_keys` permissions:
+
+- `POST /api/admin/security-center/api-keys/rotate-workspace/:workspaceId`
+- `POST /api/admin/security-center/api-keys/rotate-region/:regionCode`
+- `POST /api/admin/security-center/api-keys/rotate-org/:orgId`
+- `POST /api/admin/security-center/api-keys/rotate-all` (Root Mode only)
+
+Every rotation event logs `admin.incident_key_rotation_triggered`, `admin.api_key_rotated`, and `admin.api_key_revoked` with
+workspace and reason metadata. Batches are stored in `rotation_batches` to enable rollback via
+`POST /api/admin/security-center/api-keys/rollback/:batchId`, which reverses the rotation and emits `admin.key_rotation_rolled_back`.
