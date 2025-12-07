@@ -73,6 +73,10 @@ model Workspace {
   owner        User               @relation("WorkspaceOwner", fields: [ownerId], references: [id])
   ownerId      String             @map("owner_id")
   plan         WorkspacePlan      @default(FREE)
+  regionCode   String?            @map("region_code")
+  pendingRegionCode String?       @map("pending_region_code")
+  regionMigrationStatus String    @default("none") @map("region_migration_status")
+  allowRegionChange Boolean       @default(true) @map("allow_region_change")
   createdAt    DateTime           @default(now()) @map("created_at")
   updatedAt    DateTime           @updatedAt @map("updated_at")
   members      WorkspaceMember[]
@@ -428,7 +432,21 @@ model AuditLog {
   action       String
   targetId     String?
   metadata     Json?
+  regionCode   String?   @map("region_code")
   createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt])
+}
+
+model SecurityEvent {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map("workspace_id")
+  actorId     String?   @map("actor_id")
+  eventType   String    @map("event_type")
+  description String?
+  regionCode  String?   @map("region_code")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@index([workspaceId, createdAt])
 }

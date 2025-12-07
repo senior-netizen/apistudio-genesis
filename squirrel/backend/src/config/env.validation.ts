@@ -50,6 +50,9 @@ export const envSchema = z
     SYNC_VECTOR_DIVERGENCE_THRESHOLD: z.coerce.number().int().positive().default(25),
     SYNC_PRESENCE_TTL_SEC: z.coerce.number().int().positive().default(60),
     CSRF_SECRET: z.string().optional(),
+    DATA_RESIDENCY_ENABLED: z.coerce.boolean().default(true),
+    DATA_RESIDENCY_STRICT_ORG_LOCK: z.coerce.boolean().default(true),
+    DATA_RESIDENCY_STRICT_WORKSPACE_LOCK: z.coerce.boolean().default(false),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production') {

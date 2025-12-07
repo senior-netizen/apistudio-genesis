@@ -50,6 +50,12 @@ type SyncConfig = {
   presenceTtlSec: number;
 };
 
+type DataResidencyConfig = {
+  enabled: boolean;
+  strictOrgRegionLock: boolean;
+  strictWorkspaceRegionLock: boolean;
+};
+
 type AppConfig = {
   nodeEnv: string;
   port: number;
@@ -65,6 +71,7 @@ type AppConfig = {
   authDeveloperBypass: boolean;
   csrfSecret: string;
   sync: SyncConfig;
+  dataResidency: DataResidencyConfig;
 };
 
 export default registerAs('app', (): AppConfig => {
@@ -140,6 +147,11 @@ export default registerAs('app', (): AppConfig => {
       vectorClockTtlSec: env.SYNC_VECTOR_CLOCK_TTL_SEC,
       divergenceThreshold: env.SYNC_VECTOR_DIVERGENCE_THRESHOLD,
       presenceTtlSec: env.SYNC_PRESENCE_TTL_SEC,
+    },
+    dataResidency: {
+      enabled: env.DATA_RESIDENCY_ENABLED,
+      strictOrgRegionLock: env.DATA_RESIDENCY_STRICT_ORG_LOCK,
+      strictWorkspaceRegionLock: env.DATA_RESIDENCY_STRICT_WORKSPACE_LOCK,
     },
   };
 });
