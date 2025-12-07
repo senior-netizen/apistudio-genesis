@@ -9,7 +9,7 @@ Squirrel API Studio now includes a shared workspace synchronisation layer that e
 * **Push** – `POST /v1/sync/push` uploads a batch of local operations. The server assigns monotonically increasing `serverEpoch` values and returns acknowledgements.
 * **Presence** – `GET /v1/sync/presence?workspaceId=…` exposes active device presence. Real-time updates flow through the `/sync/ws` WebSocket namespace.
 
-HTTP requests require the existing JWT auth guards; WebSocket connections use the handshake session token.
+HTTP requests require the existing JWT auth guards; WebSocket connections use the handshake session token. Pull and push payloads must now include the caller `workspaceId` and the short-lived `sessionToken` from the handshake so the gateway can enforce tenant isolation before processing sync operations.
 
 ## Data model
 

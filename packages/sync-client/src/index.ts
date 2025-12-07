@@ -367,10 +367,12 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
     const vectorClock =
       scope.vectorClock ?? (await this.options.storage.getVectorClock(scope)) ?? createVectorClock();
     const request: SyncPullRequest = {
+      workspaceId: this.options.workspaceId,
       scopeType: scope.scopeType,
       scopeId: scope.scopeId,
       sinceEpoch: scope.sinceEpoch ?? this.serverEpoch,
       vectorClock,
+      sessionToken: this.sessionToken ?? undefined,
     };
 
     try {
@@ -412,6 +414,8 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
     }
 
     const request: SyncPushRequest = {
+      workspaceId: this.options.workspaceId,
+      sessionToken: this.sessionToken ?? undefined,
       changes: queued.map((entry) => entry.change),
     };
 
