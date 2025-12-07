@@ -15,6 +15,9 @@ export const envSchema = z
     COLLAB_ENABLED: z.coerce.boolean().default(true),
     LIVE_LOGS_ENABLED: z.coerce.boolean().default(true),
     PAIR_DEBUG_ENABLED: z.coerce.boolean().default(true),
+    ROOT_MODE_ENABLED: z.coerce.boolean().default(false),
+    ADMIN_GLOBAL_SEARCH_ENABLED: z.coerce.boolean().default(false),
+    SECURITY_CENTER_ENABLED: z.coerce.boolean().default(false),
     JWT_SECRET: z.string().min(1, 'JWT_SECRET is required').default('change_me'),
     JWT_EXPIRES_IN: z.string().min(1).default('15m'),
     REFRESH_EXPIRES_IN: z

@@ -23,6 +23,9 @@ type FeatureFlags = {
   collabEnabled: boolean;
   liveLogsEnabled: boolean;
   pairDebugEnabled: boolean;
+  rootModeEnabled: boolean;
+  adminGlobalSearchEnabled: boolean;
+  securityCenterEnabled: boolean;
 };
 
 type OwnerConfig = {
@@ -131,6 +134,9 @@ export default registerAs('app', (): AppConfig => {
       collabEnabled: env.COLLAB_ENABLED,
       liveLogsEnabled: env.LIVE_LOGS_ENABLED,
       pairDebugEnabled: env.PAIR_DEBUG_ENABLED,
+      rootModeEnabled: env.ROOT_MODE_ENABLED,
+      adminGlobalSearchEnabled: env.ADMIN_GLOBAL_SEARCH_ENABLED,
+      securityCenterEnabled: env.SECURITY_CENTER_ENABLED,
     },
     billing: {
       paynowIntegrationId: env.PAYNOW_INTEGRATION_ID,
