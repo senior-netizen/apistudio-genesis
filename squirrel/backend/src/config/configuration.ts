@@ -56,6 +56,12 @@ type DataResidencyConfig = {
   strictWorkspaceRegionLock: boolean;
 };
 
+type MagicInviteConfig = {
+  enabled: boolean;
+  defaultTtlHours: number;
+  baseUrl: string;
+};
+
 type AppConfig = {
   nodeEnv: string;
   port: number;
@@ -72,6 +78,7 @@ type AppConfig = {
   csrfSecret: string;
   sync: SyncConfig;
   dataResidency: DataResidencyConfig;
+  magicInvites: MagicInviteConfig;
 };
 
 export default registerAs('app', (): AppConfig => {
@@ -152,6 +159,11 @@ export default registerAs('app', (): AppConfig => {
       enabled: env.DATA_RESIDENCY_ENABLED,
       strictOrgRegionLock: env.DATA_RESIDENCY_STRICT_ORG_LOCK,
       strictWorkspaceRegionLock: env.DATA_RESIDENCY_STRICT_WORKSPACE_LOCK,
+    },
+    magicInvites: {
+      enabled: env.MAGIC_INVITES_ENABLED,
+      defaultTtlHours: env.MAGIC_INVITES_DEFAULT_TTL_HOURS,
+      baseUrl: env.MAGIC_INVITES_BASE_URL,
     },
   };
 });

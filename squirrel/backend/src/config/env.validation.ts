@@ -53,6 +53,12 @@ export const envSchema = z
     DATA_RESIDENCY_ENABLED: z.coerce.boolean().default(true),
     DATA_RESIDENCY_STRICT_ORG_LOCK: z.coerce.boolean().default(true),
     DATA_RESIDENCY_STRICT_WORKSPACE_LOCK: z.coerce.boolean().default(false),
+    MAGIC_INVITES_ENABLED: z.coerce.boolean().default(true),
+    MAGIC_INVITES_DEFAULT_TTL_HOURS: z.coerce.number().int().positive().default(48),
+    MAGIC_INVITES_BASE_URL: z
+      .string()
+      .url()
+      .default('https://app.squirrel-api.com/join'),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production') {
