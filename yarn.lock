@@ -3059,6 +3059,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@sdl/frontend@workspace:*, @sdl/frontend@workspace:packages/frontend":
+  version: 0.0.0-use.local
+  resolution: "@sdl/frontend@workspace:packages/frontend"
+  languageName: unknown
+  linkType: soft
+
 "@sdl/language@workspace:*, @sdl/language@workspace:packages/language":
   version: 0.0.0-use.local
   resolution: "@sdl/language@workspace:packages/language"
@@ -3183,6 +3189,7 @@ __metadata:
   dependencies:
     "@emotion/is-prop-valid": "npm:^1.2.1"
     "@radix-ui/react-icons": "npm:^1.3.0"
+    "@sdl/frontend": "workspace:*"
     "@sdl/language": "workspace:*"
     "@sdl/sdk": "workspace:*"
     "@sdl/ui": "workspace:*"
@@ -3663,6 +3670,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@squirrel/jit-elevation@workspace:packages/jit-elevation":
+  version: 0.0.0-use.local
+  resolution: "@squirrel/jit-elevation@workspace:packages/jit-elevation"
+  dependencies:
+    "@types/node": "npm:^20.10.4"
+    tsup: "npm:^8.0.0"
+    typescript: "npm:^5.3.3"
+    vitest: "npm:^1.0.4"
+  languageName: unknown
+  linkType: soft
+
 "@squirrel/logs-service@workspace:squirrel/microservices/logs-service":
   version: 0.0.0-use.local
   resolution: "@squirrel/logs-service@workspace:squirrel/microservices/logs-service"
@@ -3807,6 +3825,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@squirrel/policy-engine@workspace:packages/policy-engine":
+  version: 0.0.0-use.local
+  resolution: "@squirrel/policy-engine@workspace:packages/policy-engine"
+  dependencies:
+    "@types/node": "npm:^20.10.4"
+    tsup: "npm:^8.0.0"
+    typescript: "npm:^5.3.3"
+    vitest: "npm:^1.0.4"
+  languageName: unknown
+  linkType: soft
+
 "@squirrel/queue@workspace:*, @squirrel/queue@workspace:packages/queue":
   version: 0.0.0-use.local
   resolution: "@squirrel/queue@workspace:packages/queue"
@@ -3815,6 +3844,41 @@ __metadata:
     ioredis: "npm:^5.3.2"
     tsup: "npm:^8.0.0"
     typescript: "npm:^5.3.3"
+  languageName: unknown
+  linkType: soft
+
+"@squirrel/regions@workspace:packages/regions":
+  version: 0.0.0-use.local
+  resolution: "@squirrel/regions@workspace:packages/regions"
+  dependencies:
+    "@types/node": "npm:^20.10.4"
+    tsup: "npm:^8.0.0"
+    typescript: "npm:^5.3.3"
+    vitest: "npm:^1.0.4"
+  languageName: unknown
+  linkType: soft
+
+"@squirrel/retention@workspace:packages/retention":
+  version: 0.0.0-use.local
+  resolution: "@squirrel/retention@workspace:packages/retention"
+  dependencies:
+    "@types/node": "npm:^20.10.4"
+    tsup: "npm:^8.0.0"
+    typescript: "npm:^5.3.3"
+    vitest: "npm:^1.0.4"
+  languageName: unknown
+  linkType: soft
+
+"@squirrel/security@workspace:packages/security":
+  version: 0.0.0-use.local
+  resolution: "@squirrel/security@workspace:packages/security"
+  dependencies:
+    "@types/jsonwebtoken": "npm:^9.0.4"
+    "@types/node": "npm:^20.10.4"
+    jsonwebtoken: "npm:^9.0.2"
+    tsup: "npm:^8.0.0"
+    typescript: "npm:^5.3.3"
+    vitest: "npm:^1.0.4"
   languageName: unknown
   linkType: soft
 
@@ -4362,7 +4426,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jsonwebtoken@npm:^9.0.2":
+"@types/jsonwebtoken@npm:^9.0.2, @types/jsonwebtoken@npm:^9.0.4":
   version: 9.0.10
   resolution: "@types/jsonwebtoken@npm:9.0.10"
   dependencies:
@@ -10605,6 +10669,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jsonwebtoken@npm:^9.0.2":
+  version: 9.0.3
+  resolution: "jsonwebtoken@npm:9.0.3"
+  dependencies:
+    jws: "npm:^4.0.1"
+    lodash.includes: "npm:^4.3.0"
+    lodash.isboolean: "npm:^3.0.3"
+    lodash.isinteger: "npm:^4.0.4"
+    lodash.isnumber: "npm:^3.0.3"
+    lodash.isplainobject: "npm:^4.0.6"
+    lodash.isstring: "npm:^4.0.1"
+    lodash.once: "npm:^4.0.0"
+    ms: "npm:^2.1.1"
+    semver: "npm:^7.5.4"
+  checksum: 10c0/6ca7f1e54886ea3bde7146a5a22b53847c46e25453c7f7307a69818b9a6ad48c390b2e59d5690fcfd03c529b01960060cc4bb0c686991d6edae2285dfd30f4ba
+  languageName: node
+  linkType: hard
+
 "jsx-ast-utils@npm:^2.4.1 || ^3.0.0":
   version: 3.3.5
   resolution: "jsx-ast-utils@npm:3.3.5"
@@ -10628,6 +10710,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jwa@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "jwa@npm:2.0.1"
+  dependencies:
+    buffer-equal-constant-time: "npm:^1.0.1"
+    ecdsa-sig-formatter: "npm:1.0.11"
+    safe-buffer: "npm:^5.0.1"
+  checksum: 10c0/ab3ebc6598e10dc11419d4ed675c9ca714a387481466b10e8a6f3f65d8d9c9237e2826f2505280a739cf4cbcf511cb288eeec22b5c9c63286fc5a2e4f97e78cf
+  languageName: node
+  linkType: hard
+
 "jws@npm:^3.2.2":
   version: 3.2.2
   resolution: "jws@npm:3.2.2"
@@ -10635,6 +10728,16 @@ __metadata:
     jwa: "npm:^1.4.1"
     safe-buffer: "npm:^5.0.1"
   checksum: 10c0/e770704533d92df358adad7d1261fdecad4d7b66fa153ba80d047e03ca0f1f73007ce5ed3fbc04d2eba09ba6e7e6e645f351e08e5ab51614df1b0aa4f384dfff
+  languageName: node
+  linkType: hard
+
+"jws@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "jws@npm:4.0.1"
+  dependencies:
+    jwa: "npm:^2.0.1"
+    safe-buffer: "npm:^5.0.1"
+  checksum: 10c0/6be1ed93023aef570ccc5ea8d162b065840f3ef12f0d1bb3114cade844de7a357d5dc558201d9a65101e70885a6fa56b17462f520e6b0d426195510618a154d0
   languageName: node
   linkType: hard
 
