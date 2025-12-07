@@ -29,6 +29,7 @@ import { CollabModule } from './modules/collab/collab.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { SupportModule } from './modules/support/support.module';
+import { SecurityCenterModule } from './modules/security-center/security-center.module';
 import { CsrfService } from './common/security/csrf.service';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { EventsModule } from './events/events.module';
@@ -64,6 +65,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     BillingModule,
     MarketplaceModule,
     SupportModule,
+    SecurityCenterModule,
   ],
   controllers: [HeartbeatController],
   providers: [
