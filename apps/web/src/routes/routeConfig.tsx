@@ -33,6 +33,7 @@ import BetaFeedbackBoard from '../modules/beta/BetaFeedbackBoard';
 import BetaAnalytics from '../modules/beta/BetaAnalytics';
 import VerifyReceiptPage from '../pages/VerifyReceiptPage';
 import AdminPaymentsPage from '../pages/AdminPaymentsPage';
+import GovernancePage from '../features/governance';
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
@@ -231,6 +232,15 @@ export const appRoutes: AppRoute[] = [
     group: 'Settings',
     element: <SettingsPage />,
     summary: 'Workspace configuration and secret management.',
+  },
+  {
+    id: 'governance',
+    label: 'Governance',
+    path: '/settings/:workspaceId/governance',
+    icon: Settings,
+    group: 'Settings',
+    element: <GovernancePage />,
+    summary: 'Enterprise data governance center with retention, backups, and audit.',
   },
   {
     id: 'teams',
