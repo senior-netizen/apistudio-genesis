@@ -100,6 +100,26 @@ describe('evaluateRole', () => {
     expect(result.effectiveRole).toBe('org_security');
     expect(result.source).toBe('sso');
   });
+
+  it('overlays active JIT elevation on top of base role', () => {
+    const result = evaluateRole(
+      { ...orgUser, organizationRole: 'org_member', workspaceRoles: { 'ws-123': 'editor' } },
+      'ws-123',
+      'workspace_admin',
+      {
+        jitElevation: {
+          activeElevation: {
+            elevatedToRole: 'workspace_admin',
+            effectiveFrom: new Date('2024-01-01T00:00:00Z'),
+            expiresAt: new Date('2024-01-01T00:30:00Z'),
+          },
+        },
+      },
+    );
+
+    expect(result.allowed).toBe(true);
+    expect(result.effectiveRole).toBe('workspace_admin');
+  });
 });
 
 describe('getWorkspaceRole', () => {

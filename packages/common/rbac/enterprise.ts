@@ -80,6 +80,13 @@ export interface RoleEvaluationOptions {
   ssoRoleMap?: Record<string, string>;
   logger?: (entry: RoleAuditLog) => void;
   clock?: () => Date;
+  jitElevation?: {
+    activeElevation?: {
+      elevatedToRole: string;
+      expiresAt: Date;
+      effectiveFrom: Date;
+    } | null;
+  };
 }
 
 export function resolveRoleConflicts({
@@ -220,12 +227,20 @@ export function evaluateRole(
     return ssoRole;
   })();
 
-  const effectiveRole = resolveRoleConflicts({
+  const baseEffectiveRole = resolveRoleConflicts({
     workspaceRole,
     organizationRole: orgRoleForContext,
     ssoRole: ssoRoleForContext,
     founderFlag: elevatedUser?.isFounder,
   });
+
+  const elevatedRole = options?.jitElevation?.activeElevation?.elevatedToRole;
+  const effectiveRole = (() => {
+    if (!elevatedRole) return baseEffectiveRole;
+    const basePriority = PRIORITY_MAP[baseEffectiveRole] ?? Number.MAX_SAFE_INTEGER;
+    const elevationPriority = PRIORITY_MAP[elevatedRole] ?? Number.MAX_SAFE_INTEGER;
+    return elevationPriority < basePriority ? elevatedRole : baseEffectiveRole;
+  })();
 
   const allowed = hasRole(effectiveRole, requiredRole ?? 'viewer');
 
