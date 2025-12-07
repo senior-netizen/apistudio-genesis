@@ -4,3 +4,8 @@ export enum WorkspaceRole {
   EDITOR = 'EDITOR',
   VIEWER = 'VIEWER',
 }
+
+export enum AdminApiKeyType {
+  WORKSPACE = 'WORKSPACE',
+  SYSTEM = 'SYSTEM',
+}
