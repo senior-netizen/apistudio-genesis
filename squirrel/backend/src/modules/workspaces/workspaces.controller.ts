@@ -8,6 +8,7 @@ import { InviteDto } from './dto/invite.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { WorkspaceRole } from '../../infra/prisma/enums';
 import { RbacGuard } from '../../common/guards/rbac.guard';
+import { CreateMagicInviteDto } from './dto/create-magic-invite.dto';
 
 @ApiTags('workspaces')
 @Controller({ path: 'workspaces', version: '1' })
@@ -43,5 +44,16 @@ export class WorkspacesController {
     @Body() dto: InviteDto,
   ) {
     return this.workspaces.invite(workspaceId, user.id, dto);
+  }
+
+  @UseGuards(RbacGuard)
+  @Roles(WorkspaceRole.ADMIN, WorkspaceRole.OWNER)
+  @Post(':workspaceId/invites/magic')
+  async createMagicInvite(
+    @CurrentUser() user: { id: string },
+    @Param('workspaceId') workspaceId: string,
+    @Body() dto: CreateMagicInviteDto,
+  ) {
+    return this.workspaces.createMagicInvite(workspaceId, user.id, dto);
   }
 }
