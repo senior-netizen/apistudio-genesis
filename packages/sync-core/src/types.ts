@@ -119,10 +119,12 @@ export interface SyncHandshakeResponse {
 }
 
 export interface SyncPullRequest {
+  workspaceId: string;
   scopeType: ScopeType;
   scopeId: string;
   sinceEpoch?: number;
   vectorClock?: SyncVectorClock;
+  sessionToken?: string;
 }
 
 export interface SyncPullResponse {
@@ -131,6 +133,8 @@ export interface SyncPullResponse {
 }
 
 export interface SyncPushRequest {
+  workspaceId: string;
+  sessionToken?: string;
   changes: Array<Omit<ChangeEnvelope, 'serverEpoch' | 'createdAt'>>;
 }
 

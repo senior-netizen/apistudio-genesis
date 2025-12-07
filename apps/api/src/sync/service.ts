@@ -61,7 +61,31 @@ export class MemorySyncCoordinator {
     return session;
   }
 
+  private requireSession(token: string | undefined, workspaceId: string): SessionState {
+    if (!token) {
+      this.logger.warn('missing sync session token');
+      throw new Error('Missing sync session token');
+    }
+
+    const session = this.verifySession(token);
+    if (!session) {
+      this.logger.warn({ token }, 'invalid or expired sync session');
+      throw new Error('Invalid or expired sync session');
+    }
+
+    if (session.workspaceId !== workspaceId) {
+      this.logger.warn(
+        { token, sessionWorkspace: session.workspaceId, requestWorkspace: workspaceId },
+        'sync session workspace mismatch',
+      );
+      throw new Error('Session does not grant access to requested workspace');
+    }
+
+    return session;
+  }
+
   async pull(request: SyncPullRequest): Promise<SyncPullResponse> {
+    this.requireSession(request.sessionToken, request.workspaceId);
     this.logger.debug({ scopeType: request.scopeType, scopeId: request.scopeId, since: request.sinceEpoch }, 'sync pull');
     const changes = await this.storage.loadChanges(request.scopeType, request.scopeId, request.sinceEpoch);
     return {
@@ -71,6 +95,7 @@ export class MemorySyncCoordinator {
   }
 
   async push(request: SyncPushRequest): Promise<SyncPushResponse> {
+    this.requireSession(request.sessionToken, request.workspaceId);
     if (request.changes.length === 0) {
       return { ack: { minEpoch: this.serverEpoch, maxEpoch: this.serverEpoch }, conflicts: [] };
     }
