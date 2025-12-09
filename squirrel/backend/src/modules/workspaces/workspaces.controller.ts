@@ -9,6 +9,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { WorkspaceRole } from '../../infra/prisma/enums';
 import { RbacGuard } from '../../common/guards/rbac.guard';
 import { CreateMagicInviteDto } from './dto/create-magic-invite.dto';
+import type { WorkspaceBundle } from './workspace.types';
 
 @ApiTags('workspaces')
 @Controller({ path: 'workspaces', version: '1' })
@@ -55,5 +56,39 @@ export class WorkspacesController {
     @Body() dto: CreateMagicInviteDto,
   ) {
     return this.workspaces.createMagicInvite(workspaceId, user.id, dto);
+  }
+
+  @Get(':workspaceId/audit-logs')
+  async auditLogs(
+    @CurrentUser() user: { id: string },
+    @Param('workspaceId') workspaceId: string,
+    @Query('limit') limit = '5',
+    @Query('actions') actions?: string,
+  ) {
+    const parsedLimit = Number.isFinite(Number.parseInt(limit, 10)) ? Number.parseInt(limit, 10) : 5;
+    const requestedActions = actions
+      ?.split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    return this.workspaces.listAuditLogs(workspaceId, user.id, {
+      limit: parsedLimit,
+      actions: requestedActions,
+    });
+  }
+
+  @Get(':workspaceId/export')
+  async exportWorkspace(@CurrentUser() user: { id: string }, @Param('workspaceId') workspaceId: string) {
+    return this.workspaces.exportBundle(workspaceId, user.id);
+  }
+
+  @Post(':workspaceId/import')
+  async importWorkspace(
+    @CurrentUser() user: { id: string },
+    @Param('workspaceId') workspaceId: string,
+    @Query('dryRun') dryRun = 'false',
+    @Body() bundle: WorkspaceBundle,
+  ) {
+    const dryRunFlag = String(dryRun).toLowerCase() === 'true';
+    return this.workspaces.importBundle(workspaceId, user.id, bundle, { dryRun: dryRunFlag });
   }
 }

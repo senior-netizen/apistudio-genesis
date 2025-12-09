@@ -12,6 +12,15 @@ import { WorkspaceRole } from '../../infra/prisma/enums';
 import { CreateMagicInviteDto } from './dto/create-magic-invite.dto';
 import { AcceptMagicInviteDto } from './dto/accept-magic-invite.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import type {
+  WorkspaceBundle,
+  WorkspaceAuditLog,
+  WorkspaceCollection,
+  WorkspaceEnvironment,
+  WorkspaceImportSummary,
+  WorkspaceProject,
+  WorkspaceRequest,
+} from './workspace.types';
 
 @Injectable()
 export class WorkspacesService {
@@ -283,6 +292,318 @@ export class WorkspacesService {
       roleAssigned: membership.role,
       status: 'joined',
     };
+  }
+
+  async exportBundle(workspaceId: string, userId: string): Promise<WorkspaceBundle> {
+    await this.getById(workspaceId, userId);
+    const projects = await this.prisma.project.findMany({
+      where: { workspaceId },
+      include: {
+        collections: {
+          include: { requests: true, children: { include: { requests: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
+        environments: { include: { variables: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const mappedProjects: WorkspaceProject[] = projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      collections: project.collections.map((collection) => this.mapCollection(collection)),
+      environments: project.environments.map((env) => this.mapEnvironment(env)),
+    }));
+
+    const workspaceEnvs = await this.prisma.environment.findMany({
+      where: { workspaceId, projectId: null },
+      include: { variables: true },
+    });
+
+    const bundle: WorkspaceBundle = {
+      version: 1,
+      projects: mappedProjects,
+      environments: workspaceEnvs.map((env) => this.mapEnvironment(env)),
+      history: [],
+      mocks: [],
+    };
+
+    await this.prisma.auditLog.create({
+      data: ({
+        workspaceId,
+        actorId: userId,
+        action: 'workspace.export',
+        metadata: {
+          projects: mappedProjects.length,
+          collections: mappedProjects.reduce((acc, p) => acc + p.collections.length, 0),
+          environments: workspaceEnvs.length,
+        },
+      } as any),
+    });
+    return bundle;
+  }
+
+  async importBundle(
+    workspaceId: string,
+    userId: string,
+    bundle: WorkspaceBundle,
+    options: { dryRun?: boolean } = {},
+  ) {
+    await this.getById(workspaceId, userId);
+    this.validateBundle(bundle);
+    const safeProjects = bundle?.projects ?? [];
+    const safeEnvironments = bundle?.environments ?? [];
+    const summary = this.summarizeBundle(bundle);
+
+    if (options.dryRun) {
+      return {
+        status: 'dry-run',
+        summary,
+      };
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      let projectsCreated = 0;
+      for (const project of safeProjects) {
+        const createdProject = await tx.project.create({
+          data: {
+            workspaceId,
+            name: project.name ?? 'Imported Project',
+            description: project.description ?? undefined,
+          },
+        });
+        projectsCreated += 1;
+        await this.importCollections(tx, workspaceId, createdProject.id, project.collections ?? []);
+        await this.importEnvironments(tx, workspaceId, project.environments ?? [], createdProject.id);
+      }
+
+      // Workspace-level environments (not tied to a project)
+      await this.importEnvironments(tx, workspaceId, safeEnvironments, null);
+
+      return { projectsCreated };
+    });
+
+    await this.prisma.auditLog.create({
+      data: ({
+        workspaceId,
+        actorId: userId,
+        action: 'workspace.import',
+        metadata: {
+          projects: safeProjects.length,
+          environments: safeEnvironments.length,
+        },
+      } as any),
+    });
+
+    return {
+      status: 'imported',
+      projectsCreated: result.projectsCreated,
+      summary,
+    };
+  }
+
+  async listAuditLogs(
+    workspaceId: string,
+    userId: string,
+    options?: { limit?: number; actions?: string[] },
+  ): Promise<WorkspaceAuditLog[]> {
+    await this.getById(workspaceId, userId);
+    const allowedActions = new Set(['workspace.export', 'workspace.import']);
+    const actions =
+      options?.actions && options.actions.length
+        ? options.actions.filter((action) => allowedActions.has(action))
+        : Array.from(allowedActions.values());
+    const limit = Math.min(Math.max(options?.limit ?? 10, 1), 50);
+
+    const logs = await this.prisma.auditLog.findMany({
+      where: {
+        workspaceId,
+        ...(actions.length ? { action: { in: actions } } : {}),
+      },
+      select: {
+        id: true,
+        workspaceId: true,
+        actorId: true,
+        action: true,
+        targetId: true,
+        metadata: true,
+        createdAt: true,
+      } as any,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    return logs as unknown as WorkspaceAuditLog[];
+  }
+
+  private summarizeBundle(bundle: WorkspaceBundle): WorkspaceImportSummary {
+    const projects = bundle.projects ?? [];
+    const collections = projects.reduce((acc, project) => acc + (project.collections?.length ?? 0) + this.countNestedCollections(project.collections ?? []), 0);
+    const requests = projects.reduce(
+      (acc, project) =>
+        acc +
+        (project.collections ?? []).reduce(
+          (innerAcc, collection) => innerAcc + (collection.requests?.length ?? 0) + this.countNestedRequests(collection.folders ?? []),
+          0,
+        ),
+      0,
+    );
+    const environments =
+      (bundle.environments?.length ?? 0) +
+      projects.reduce((acc, project) => acc + (project.environments?.length ?? 0), 0);
+
+    return {
+      projects: projects.length,
+      collections,
+      requests,
+      environments,
+    };
+  }
+
+  private countNestedCollections(collections: WorkspaceCollection[]): number {
+    return (collections ?? []).reduce((acc, col) => acc + (col.folders?.length ?? 0) + this.countNestedCollections(col.folders ?? []), 0);
+  }
+
+  private countNestedRequests(collections: WorkspaceCollection[]): number {
+    return (collections ?? []).reduce(
+      (acc, col) => acc + (col.requests?.length ?? 0) + this.countNestedRequests(col.folders ?? []),
+      0,
+    );
+  }
+
+  private mapCollection(collection: any): WorkspaceCollection {
+    return {
+      id: collection.id,
+      name: collection.name,
+      description: collection.description,
+      requests: (collection.requests ?? []).map((request: any) => this.mapRequest(request)),
+      folders: (collection.children ?? []).map((child: any) => this.mapCollection(child)),
+    };
+  }
+
+  private mapRequest(request: any): WorkspaceRequest {
+    const headers = request.headers && typeof request.headers === 'object'
+      ? Object.entries(request.headers as Record<string, any>).map(([key, value]) => ({
+          key,
+          value: typeof value === 'string' ? value : JSON.stringify(value),
+          enabled: true,
+        }))
+      : [];
+    return {
+      id: request.id,
+      name: request.name,
+      method: request.method,
+      url: request.url,
+      description: request.description,
+      headers,
+      params: [],
+      body: request.body ?? undefined,
+    };
+  }
+
+  private mapEnvironment(env: any): WorkspaceEnvironment {
+    return {
+      id: env.id,
+      name: env.name,
+      projectId: env.projectId ?? null,
+      variables:
+        env.variables?.map((v: any) => ({
+          key: v.key,
+          value: v.value,
+          enabled: true,
+        })) ?? [],
+    };
+  }
+
+  private async importCollections(tx: any, workspaceId: string, projectId: string, collections: WorkspaceCollection[], parentId: string | null = null) {
+    for (const collection of collections) {
+      const createdCollection = await tx.collection.create({
+        data: {
+          workspaceId,
+          projectId,
+          name: collection.name ?? 'Imported Collection',
+          parentCollectionId: parentId,
+        },
+      });
+      // Requests
+      for (const request of collection.requests ?? []) {
+        await tx.request.create({
+          data: {
+            collectionId: createdCollection.id,
+            name: request.name ?? 'Imported Request',
+            method: (request.method ?? 'GET').toUpperCase(),
+            url: request.url ?? '',
+            headers: this.headersArrayToMap(request.headers ?? []),
+            body: request.body ?? undefined,
+          },
+        });
+      }
+      // Children folders
+      if (collection.folders?.length) {
+        await this.importCollections(tx, workspaceId, projectId, collection.folders, createdCollection.id);
+      }
+    }
+  }
+
+  private headersArrayToMap(headers: Array<{ key: string; value?: string; enabled?: boolean }>) {
+    const map: Record<string, string> = {};
+    headers
+      .filter((h) => h.enabled !== false && h.key)
+      .forEach((h) => {
+        map[h.key] = h.value ?? '';
+      });
+    return map;
+  }
+
+  private async importEnvironments(tx: any, workspaceId: string, environments: WorkspaceEnvironment[], projectId: string | null) {
+    for (const env of environments) {
+      const created = await tx.environment.create({
+        data: {
+          workspaceId,
+          projectId,
+          name: env.name ?? 'Imported Environment',
+        },
+      });
+      for (const variable of env.variables ?? []) {
+        await tx.variable.create({
+          data: {
+            workspaceId,
+            projectId,
+            environmentId: created.id,
+            key: variable.key,
+            value: variable.value,
+          },
+        });
+      }
+    }
+  }
+
+  private validateBundle(bundle: WorkspaceBundle) {
+    if (!bundle || typeof bundle !== 'object') {
+      throw new BadRequestException({ code: 'INVALID_BUNDLE', message: 'Import bundle must be an object' });
+    }
+    const projects = bundle.projects ?? [];
+    const environments = bundle.environments ?? [];
+    if (!Array.isArray(projects) || !Array.isArray(environments)) {
+      throw new BadRequestException({ code: 'INVALID_BUNDLE', message: 'Projects and environments must be arrays' });
+    }
+    if (projects.length > 50) {
+      throw new BadRequestException({ code: 'IMPORT_TOO_LARGE', message: 'Too many projects in import bundle' });
+    }
+    const collectionsCount = projects.reduce((acc, p) => acc + (p.collections?.length ?? 0), 0);
+    const requestsCount = projects.reduce(
+      (acc, p) =>
+        acc +
+        (p.collections ?? []).reduce((cAcc, c) => cAcc + (c.requests?.length ?? 0), 0),
+      0,
+    );
+    if (collectionsCount > 500 || requestsCount > 2000) {
+      throw new BadRequestException({ code: 'IMPORT_TOO_LARGE', message: 'Import exceeds limits' });
+    }
+    if (environments.length > 200) {
+      throw new BadRequestException({ code: 'IMPORT_TOO_LARGE', message: 'Too many environments' });
+    }
   }
 
   private canAssignRole(inviterRole: WorkspaceRole, desired: WorkspaceRole) {

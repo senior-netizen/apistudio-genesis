@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Card } from '@sdl/ui';
-import { Globe2, Loader2, Send, SlidersHorizontal } from 'lucide-react';
+import { Globe2, LayoutPanelLeft, Loader2, Send, SlidersHorizontal } from 'lucide-react';
 import { useAppStore } from '../../store';
 import { createEmptyRequest } from '../../store/utils';
 import UrlBar from './UrlBar';
@@ -18,6 +18,7 @@ import { Tooltip } from '../ui/Tooltip';
 const tabOrder: RequestTab[] = ['params', 'headers', 'body', 'auth', 'scripts'];
 
 export default function RequestBuilder() {
+  const [splitView, setSplitView] = useState(false);
   const {
     workingRequest,
     selectedRequestTab,
@@ -32,7 +33,11 @@ export default function RequestBuilder() {
     initializing,
     initializationError,
     createBlankWorkingRequest,
-    projects
+    projects,
+    duplicateRequest,
+    activeCollectionId,
+    getCollectionPermission,
+    setCollectionPermission
   } = useAppStore((state) => ({
     workingRequest: state.workingRequest,
     selectedRequestTab: state.selectedRequestTab,
@@ -47,8 +52,14 @@ export default function RequestBuilder() {
     initializing: state.initializing,
     initializationError: state.initializationError,
     createBlankWorkingRequest: state.createBlankWorkingRequest,
-    projects: state.projects
+    projects: state.projects,
+    duplicateRequest: state.duplicateRequest,
+    activeCollectionId: state.activeCollectionId,
+    getCollectionPermission: state.getCollectionPermission,
+    setCollectionPermission: state.setCollectionPermission
   }));
+  const collectionRole = activeCollectionId ? getCollectionPermission(activeCollectionId) : 'editor';
+  const readOnly = collectionRole === 'viewer';
 
   useEffect(() => {
     if (!initialized) {
@@ -72,6 +83,12 @@ export default function RequestBuilder() {
         event.preventDefault();
         sendRequest();
       }
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'd') {
+        event.preventDefault();
+        if (workingRequest?.id) {
+          duplicateRequest(workingRequest.id as string);
+        }
+      }
       if (event.altKey) {
         const index = Number.parseInt(event.key, 10);
         if (index >= 1 && index <= tabOrder.length) {
@@ -82,7 +99,7 @@ export default function RequestBuilder() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [persistWorkingRequest, sendRequest, setSelectedRequestTab]);
+  }, [duplicateRequest, persistWorkingRequest, sendRequest, setSelectedRequestTab, workingRequest?.id]);
 
   const currentRequest = workingRequest ?? createEmptyRequest();
   const headers = currentRequest.headers ?? [];
@@ -149,7 +166,7 @@ export default function RequestBuilder() {
               <h2 className="text-sm font-semibold text-foreground">Params, headers &amp; body</h2>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {tabOrder.map((tab) => {
               const label =
                 tab === 'params'
@@ -184,6 +201,41 @@ export default function RequestBuilder() {
                 </Tooltip>
               );
             })}
+            {activeCollectionId ? (
+              <div className="ml-auto flex items-center gap-2 rounded-[10px] border border-border/60 bg-background/70 px-3 py-2 text-xs">
+                <span className="text-muted">Role</span>
+                <select
+                  value={collectionRole}
+                  onChange={(e) => setCollectionPermission(activeCollectionId, e.target.value as any)}
+                  className="rounded-md border border-border/60 bg-background px-2 py-1 text-xs focus:outline-none"
+                >
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+                {readOnly ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-800">
+                    Run-only
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setSplitView((prev) => {
+                  if (!prev && (selectedRequestTab === 'params' || selectedRequestTab === 'headers')) {
+                    setSelectedRequestTab('body');
+                  }
+                  return !prev;
+                });
+              }}
+              className={`ml-auto flex h-11 items-center gap-2 rounded-[12px] border px-3 text-sm transition ${
+                splitView ? 'border-accent/60 bg-accent/10 text-foreground' : 'border-border/60 text-muted hover:text-foreground'
+              }`}
+            >
+              <LayoutPanelLeft className="h-4 w-4" aria-hidden />
+              Side-by-side
+            </button>
           </div>
         </div>
 
@@ -197,9 +249,18 @@ export default function RequestBuilder() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="space-y-6"
             >
-              {selectedRequestTab === 'params' && <ParamsEditor request={{ ...currentRequest, params: query }} />}
-              {selectedRequestTab === 'headers' && <HeadersEditor request={{ ...currentRequest, headers }} />}
-              {selectedRequestTab === 'body' && <BodyEditor request={{ ...currentRequest, body, headers, params: query }} />}
+              {splitView ? (
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <ParamsEditor request={{ ...currentRequest, params: query }} readOnly={readOnly} />
+                  <HeadersEditor request={{ ...currentRequest, headers }} readOnly={readOnly} />
+                </div>
+              ) : (
+                <>
+                  {selectedRequestTab === 'params' && <ParamsEditor request={{ ...currentRequest, params: query }} readOnly={readOnly} />}
+                  {selectedRequestTab === 'headers' && <HeadersEditor request={{ ...currentRequest, headers }} readOnly={readOnly} />}
+                </>
+              )}
+              {selectedRequestTab === 'body' && <BodyEditor request={{ ...currentRequest, body, headers, params: query }} readOnly={readOnly} />}
               {selectedRequestTab === 'auth' && <AuthEditor request={currentRequest} />}
               {selectedRequestTab === 'scripts' && <ScriptsEditor request={currentRequest} />}
             </motion.div>
@@ -225,6 +286,7 @@ export default function RequestBuilder() {
             onRevert={revertWorkingRequest}
             unsavedChanges={unsavedChanges}
             isSending={isSending}
+            readOnly={readOnly}
           />
           <AnimatePresence>
             {isSending ? (

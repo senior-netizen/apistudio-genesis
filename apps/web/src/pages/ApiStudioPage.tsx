@@ -7,6 +7,7 @@ import { useAppStore } from '../store';
 import { inspectVariables } from '../lib/env/resolveVars';
 import { Tooltip } from '../components/ui/Tooltip';
 import { useHealthStore } from '../state/healthStore';
+import { ImportExportControls } from '../components/request/ImportExportControls';
 
 export default function ApiStudioPage() {
   const {
@@ -96,6 +97,7 @@ export default function ApiStudioPage() {
               <Zap className="h-4 w-4" aria-hidden /> Keyboard cheatsheet (⌘?)
             </Button>
           </Tooltip>
+          <ImportExportControls />
         </div>
       </div>
 

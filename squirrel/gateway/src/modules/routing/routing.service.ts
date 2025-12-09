@@ -19,7 +19,7 @@ export class RoutingService {
     { prefixes: ['auth'], envKey: 'AUTH_SERVICE_URL' },
     { prefixes: ['users'], envKey: 'USER_SERVICE_URL' },
     { prefixes: ['orgs', 'organizations', 'teams'], envKey: 'ORGANIZATION_SERVICE_URL' },
-    { prefixes: ['workspaces'], envKey: 'WORKSPACE_SERVICE_URL' },
+    { prefixes: ['workspaces', 'workspace'], envKey: 'WORKSPACE_SERVICE_URL' },
     { prefixes: ['request', 'runner'], envKey: 'API_RUNNER_SERVICE_URL' },
     { prefixes: ['ai'], envKey: 'AI_SERVICE_URL' },
     { prefixes: ['billing'], envKey: 'BILLING_SERVICE_URL' },

@@ -2,7 +2,7 @@ import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { elevateFounderRole } from '../../../shared/rbac/roles';
+import { elevateFounderRole } from '../rbac';
 
 @Injectable()
 export class JwtAuthMiddleware implements NestMiddleware {

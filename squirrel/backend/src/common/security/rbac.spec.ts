@@ -1,6 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { RolesGuard as BillingRolesGuard } from '../../../../microservices/billing-service/src/common/guards/roles.guard';
-import { elevateFounderRole, hasRole } from '../../../../shared/rbac/roles';
+import { elevateFounderRole, hasRole } from './rbac';
 import { resolveAccountRole } from './owner-role.util';
 
 describe('RBAC role hierarchy', () => {

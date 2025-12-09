@@ -1,7 +1,8 @@
 import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
-import * as bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
+import bcrypt = require('bcryptjs');
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { AdminApiKeyType, WorkspaceRole } from '../../infra/prisma/enums';
 import { CreateAdminApiKeyDto } from './dto/create-admin-api-key.dto';
@@ -50,7 +51,7 @@ export class SecurityCenterService {
   private generateKeyMaterial() {
     const prefix = KEY_PREFIX + randomBytes(8).toString('base64url');
     const secret = randomBytes(32).toString('base64url');
-    const hash = bcrypt.hashSync(secret, 10);
+    const hash = (bcrypt as any).hashSync(secret, 10);
     return { keyId: prefix, keyPrefix: prefix.slice(0, 12), secret, hash } as const;
   }
 
@@ -236,7 +237,7 @@ export class SecurityCenterService {
     const graceUntil = dualMode ? new Date(now.getTime() + (dto.dualModeMinutes ?? 0) * 60_000) : null;
     const revokeOld = dto.revokeOldImmediately !== false;
 
-    const beforeStates = keys.map((k) => this.serializeKey(k));
+    const beforeStates = keys.map((k: any) => this.serializeKey(k));
     const newKeys: { id: string; keyId: string; secret: string; workspaceId?: string | null }[] = [];
     const afterStates: SerializedKeyState[] = [];
 
@@ -331,8 +332,8 @@ export class SecurityCenterService {
       batchId = batch.id;
     });
 
-    if (keys.some((k) => k.workspaceId)) {
-      const workspaceIds = [...new Set(keys.map((k) => k.workspaceId).filter(Boolean) as string[])];
+    if (keys.some((k: any) => k.workspaceId)) {
+      const workspaceIds = [...new Set(keys.map((k: any) => k.workspaceId).filter(Boolean) as string[])];
       await Promise.all(
         workspaceIds.map((workspaceId) =>
           this.prisma.securityEvent.create({
@@ -378,7 +379,10 @@ export class SecurityCenterService {
       throw new BadRequestException('regionCode required');
     }
     const workspaceIds = (
-      await this.prisma.workspace.findMany({ where: { regionCode }, select: { id: true } })
+      await this.prisma.workspace.findMany({
+        where: { regionCode } as Prisma.WorkspaceWhereInput,
+        select: { id: true },
+      })
     ).map((w) => w.id);
     if (!workspaceIds.length) {
       return { batchId: null, rotated: 0, newKeys: [] };

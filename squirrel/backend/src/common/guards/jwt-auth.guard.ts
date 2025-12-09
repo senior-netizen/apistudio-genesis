@@ -5,7 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { resolveAccountRole } from '../security/owner-role.util';
-import { elevateFounderRole } from '../../../../shared/rbac/roles';
+import { elevateFounderRole } from '../security/rbac';
 import { compare as bcryptCompare } from 'bcryptjs';
 import { Reflector } from '@nestjs/core';
 import { PUBLIC_ROUTE_KEY } from '../decorators/public-route.decorator';

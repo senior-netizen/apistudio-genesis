@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Button, Card } from '@sdl/ui';
+import { Badge, Button, Card } from '@sdl/ui';
 import { ClipboardCopy, Code2, Terminal, X } from 'lucide-react';
 import { LightAsync as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { useAppStore } from '../../store';
@@ -27,7 +27,8 @@ const tabs = [
   { id: 'body', label: 'Body' },
   { id: 'headers', label: 'Headers' },
   { id: 'cookies', label: 'Cookies' },
-  { id: 'timeline', label: 'Timeline' }
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'diff', label: 'Diff' },
 ] as const;
 
 type SnippetOption = {
@@ -107,7 +108,8 @@ export default function ResponseViewer() {
     preRequestOutcome,
     lastSentRequest,
     responseStream,
-    responseProgress
+    responseProgress,
+    responseHistory
   } = useAppStore((state) => ({
     response: state.response,
     responseError: state.responseError,
@@ -115,7 +117,8 @@ export default function ResponseViewer() {
     preRequestOutcome: state.preRequestOutcome,
     lastSentRequest: state.lastSentRequest ?? state.workingRequest,
     responseStream: state.responseStream,
-    responseProgress: state.responseProgress
+    responseProgress: state.responseProgress,
+    responseHistory: state.responseHistory,
   }));
 
   const resolvedUrl = response?.url ?? lastSentRequest?.url ?? '';
@@ -123,6 +126,9 @@ export default function ResponseViewer() {
     if (!lastSentRequest || !resolvedUrl) return '';
     return buildSnippet(activeSnippet, lastSentRequest, resolvedUrl);
   }, [activeSnippet, lastSentRequest, resolvedUrl]);
+
+  const latest = responseHistory[0];
+  const previous = responseHistory[1];
 
   const copyBody = () => {
     if (response?.body) {
@@ -174,6 +180,7 @@ export default function ResponseViewer() {
               key={tab.id}
               size="sm"
               variant={activeTab === tab.id ? 'primary' : 'ghost'}
+              disabled={tab.id === 'diff' && responseHistory.length < 2}
               className="h-9 rounded-[10px] px-3 text-xs font-semibold"
               onClick={() => setActiveTab(tab.id)}
             >
@@ -196,6 +203,49 @@ export default function ResponseViewer() {
         {activeTab === 'headers' && <HeadersPanel response={response} />}
         {activeTab === 'cookies' && <CookiesPanel response={response} />}
         {activeTab === 'timeline' && <TimelinePanel timeline={response?.timeline} />}
+        {activeTab === 'diff' && previous && latest ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+              <span className="flex items-center gap-1">
+                <Badge variant={latest.status < 400 ? 'success' : 'destructive'}>{latest.status}</Badge>
+                <span className="text-foreground">Latest</span>
+              </span>
+              <Badge variant="secondary">
+                Δ status {latest.status - previous.status >= 0 ? '+' : ''}
+                {latest.status - previous.status}
+              </Badge>
+              <Badge variant="secondary">
+                Δ time {latest.duration - previous.duration >= 0 ? '+' : ''}
+                {latest.duration - previous.duration}ms
+              </Badge>
+              <Badge variant="secondary">
+                Δ size {formatBytes(latest.size - previous.size)}
+              </Badge>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {[latest, previous].map((snap, idx) => (
+                <div key={snap.id} className="rounded-2xl border border-border/60 bg-background/80 p-3">
+                  <div className="flex items-center justify-between text-xs text-muted">
+                    <span className="flex items-center gap-2">
+                      <Badge variant={snap.status < 400 ? 'success' : 'destructive'}>{snap.status}</Badge>
+                      <span className="font-mono uppercase tracking-[0.3em] text-muted">{snap.method}</span>
+                    </span>
+                    <span>{idx === 0 ? 'Latest' : 'Previous'}</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-[11px] text-muted">
+                    <Badge variant="secondary">{snap.duration} ms</Badge>
+                    <Badge variant="secondary">{formatBytes(snap.size)}</Badge>
+                  </div>
+                  <div className="mt-3 max-h-[320px] overflow-auto rounded-xl border border-border/50 bg-background/90 p-3 text-xs">
+                    <SyntaxHighlighter customStyle={{ background: 'transparent', margin: 0 }}>
+                      {safePretty(snap.body)}
+                    </SyntaxHighlighter>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {response && (
@@ -304,4 +354,20 @@ export default function ResponseViewer() {
       </Dialog.Root>
     </Card>
   );
+}
+
+function formatBytes(bytes: number) {
+  const abs = Math.abs(bytes);
+  const sign = bytes < 0 ? '-' : '';
+  if (abs < 1024) return `${sign}${abs} B`;
+  if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
+  return `${sign}${(abs / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function safePretty(body: string) {
+  try {
+    return JSON.stringify(JSON.parse(body), null, 2);
+  } catch {
+    return body;
+  }
 }

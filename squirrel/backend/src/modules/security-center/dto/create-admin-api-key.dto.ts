@@ -11,7 +11,7 @@ export class CreateAdminApiKeyDto {
   @ApiProperty({ type: [String] })
   @IsArray()
   @IsString({ each: true })
-  scopes: string[];
+  scopes: string[] = [];
 
   @ApiPropertyOptional({ enum: AdminApiKeyType, default: AdminApiKeyType.WORKSPACE })
   @IsOptional()

@@ -5,6 +5,9 @@ interface JsonTreeProps {
   data: unknown;
   path?: string;
   search?: string;
+  expandAllToken?: number;
+  collapseAllToken?: number;
+  onCopyPath?: (path: string) => void;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -28,7 +31,7 @@ function cancelPretty(handle: IdleHandle) {
   clearTimeout(handle);
 }
 
-export default function JsonTree({ data, path = 'root', search }: JsonTreeProps) {
+export default function JsonTree({ data, path = 'root', search, expandAllToken, collapseAllToken, onCopyPath }: JsonTreeProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [stringified, setStringified] = useState('');
 
@@ -49,6 +52,18 @@ export default function JsonTree({ data, path = 'root', search }: JsonTreeProps)
       cancelPretty(handle);
     };
   }, [data]);
+
+  useEffect(() => {
+    if (expandAllToken !== undefined) {
+      setCollapsed(false);
+    }
+  }, [expandAllToken]);
+
+  useEffect(() => {
+    if (collapseAllToken !== undefined) {
+      setCollapsed(true);
+    }
+  }, [collapseAllToken]);
 
   if (!isObject(data) && !Array.isArray(data)) {
     const match = search ? stringified.toLowerCase().includes(search.toLowerCase()) : true;
@@ -77,20 +92,54 @@ export default function JsonTree({ data, path = 'root', search }: JsonTreeProps)
       </button>
       {!collapsed && (
         <div className="space-y-2 border-l border-border/50 pl-4">
-          {filtered.map(([key, value]) => (
-            <div key={key} className="space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted">{key}</span>
-              <div className="pl-3">
-                {isObject(value) || Array.isArray(value) ? (
-                  <JsonTree data={value} path={`${path}.${String(key)}`} search={search} />
-                ) : (
-                  <span className="font-mono text-xs text-foreground">{String(value)}</span>
-                )}
+          {filtered.map(([key, value]) => {
+            const childPath = `${path}.${String(key)}`;
+            const valueString = String(value);
+            const match = search ? valueString.toLowerCase().includes(search.toLowerCase()) : false;
+            return (
+              <div key={key} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => onCopyPath?.(childPath)}
+                  className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-muted hover:text-foreground"
+                >
+                  {String(key)}
+                </button>
+                <div className="pl-3">
+                  {isObject(value) || Array.isArray(value) ? (
+                    <JsonTree
+                      data={value}
+                      path={childPath}
+                      search={search}
+                      expandAllToken={expandAllToken}
+                      collapseAllToken={collapseAllToken}
+                      onCopyPath={onCopyPath}
+                    />
+                  ) : (
+                    <span className="font-mono text-xs text-foreground">
+                      {match ? highlight(valueString, search!) : valueString}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
+  );
+}
+
+function highlight(value: string, query: string) {
+  const lower = value.toLowerCase();
+  const q = query.toLowerCase();
+  const idx = lower.indexOf(q);
+  if (idx === -1) return value;
+  return (
+    <>
+      {value.slice(0, idx)}
+      <mark className="bg-amber-200/80 text-foreground">{value.slice(idx, idx + query.length)}</mark>
+      {value.slice(idx + query.length)}
+    </>
   );
 }

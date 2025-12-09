@@ -28,6 +28,8 @@ COPY package.json yarn.lock .yarnrc.yml ./
 RUN sed -i '/^httpProxy:/d;/^httpsProxy:/d' .yarnrc.yml
 COPY .yarn ./.yarn
 COPY squirrel/microservices/support-service ./squirrel/microservices/support-service
+COPY squirrel/shared ./squirrel/shared
+COPY packages/common ./packages/common
 RUN node ./.yarn/releases/yarn-4.10.3.cjs workspaces focus @squirrel/support-service
 RUN cd squirrel/microservices/support-service && node /app/.yarn/releases/yarn-4.10.3.cjs build
 

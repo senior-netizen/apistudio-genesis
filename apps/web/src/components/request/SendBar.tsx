@@ -11,9 +11,10 @@ interface SendBarProps {
   onRevert: () => void;
   unsavedChanges: boolean;
   isSending: boolean;
+  readOnly?: boolean;
 }
 
-export default function SendBar({ request, onSend, onSave, onRevert, unsavedChanges, isSending }: SendBarProps) {
+export default function SendBar({ request, onSend, onSave, onRevert, unsavedChanges, isSending, readOnly }: SendBarProps) {
   const duplicateRequest = useAppStore((state) => state.duplicateRequest);
   const saveExample = useAppStore((state) => state.saveExample);
 
@@ -32,7 +33,7 @@ export default function SendBar({ request, onSend, onSave, onRevert, unsavedChan
         <Button
           variant="subtle"
           onClick={onSave}
-          disabled={!unsavedChanges}
+          disabled={!unsavedChanges || readOnly}
           className="h-12 min-w-[140px] justify-center gap-2"
         >
           <Save className="h-4 w-4" aria-hidden />
@@ -41,7 +42,7 @@ export default function SendBar({ request, onSend, onSave, onRevert, unsavedChan
         <Button
           variant="ghost"
           onClick={onRevert}
-          disabled={!unsavedChanges}
+          disabled={!unsavedChanges || readOnly}
           className="h-12 min-w-[140px] justify-center"
         >
           Revert changes
@@ -55,6 +56,7 @@ export default function SendBar({ request, onSend, onSave, onRevert, unsavedChan
             variant="ghost"
             onClick={() => duplicateRequest(request.id as string)}
             className="h-10 gap-2 rounded-[10px]"
+            disabled={readOnly}
           >
             <CopyPlus className="h-4 w-4" aria-hidden /> Duplicate
           </Button>
@@ -70,6 +72,7 @@ export default function SendBar({ request, onSend, onSave, onRevert, unsavedChan
               })
             }
             className="h-10 gap-2 rounded-[10px]"
+            disabled={readOnly}
           >
             <Star className="h-4 w-4" aria-hidden /> Save as example
           </Button>

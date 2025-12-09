@@ -121,7 +121,9 @@ function AppContent() {
   const derivedUser = useMemo(
     () => ({
       role: user?.role ?? profile?.role ?? undefined,
-      isFounder: user?.isFounder ?? user?.role === 'founder' || profile?.role === 'founder',
+      isFounder:
+        user?.isFounder ??
+        (user?.role === 'founder' || profile?.role === 'founder'),
     }),
     [profile?.role, user?.isFounder, user?.role],
   );

@@ -2686,6 +2686,34 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@radix-ui/react-radio-group@npm:^1.1.1":
+  version: 1.3.8
+  resolution: "@radix-ui/react-radio-group@npm:1.3.8"
+  dependencies:
+    "@radix-ui/primitive": "npm:1.1.3"
+    "@radix-ui/react-compose-refs": "npm:1.1.2"
+    "@radix-ui/react-context": "npm:1.1.2"
+    "@radix-ui/react-direction": "npm:1.1.1"
+    "@radix-ui/react-presence": "npm:1.1.5"
+    "@radix-ui/react-primitive": "npm:2.1.3"
+    "@radix-ui/react-roving-focus": "npm:1.1.11"
+    "@radix-ui/react-use-controllable-state": "npm:1.2.2"
+    "@radix-ui/react-use-previous": "npm:1.1.1"
+    "@radix-ui/react-use-size": "npm:1.1.1"
+  peerDependencies:
+    "@types/react": "*"
+    "@types/react-dom": "*"
+    react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+    react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    "@types/react-dom":
+      optional: true
+  checksum: 10c0/23af8e8b833da1fc4aa4e67c3607dedee4fc5b39278d2e2b820bec7f7b3c0891b006a8a35c57ba436ddf18735bbd8dad9a598d14632a328753a875fde447975c
+  languageName: node
+  linkType: hard
+
 "@radix-ui/react-roving-focus@npm:1.1.11":
   version: 1.1.11
   resolution: "@radix-ui/react-roving-focus@npm:1.1.11"
@@ -2797,6 +2825,19 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10c0/9f98fdaba008dfc58050de60a77670b885792df473cf82c1cef8daee919a5dd5a77d270209f5f0b0abfaac78cb1627396e3ff56c81b735be550409426fe8b040
+  languageName: node
+  linkType: hard
+
+"@radix-ui/react-use-previous@npm:1.1.1":
+  version: 1.1.1
+  resolution: "@radix-ui/react-use-previous@npm:1.1.1"
+  peerDependencies:
+    "@types/react": "*"
+    react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/52f1089d941491cd59b7f52a5679a14e9381711419a0557ce0f3bc9a4c117078224efec54dcced41a3653a13a386a7b6ec75435d61a273e8b9f5d00235f2b182
   languageName: node
   linkType: hard
 
@@ -3167,6 +3208,7 @@ __metadata:
   dependencies:
     "@radix-ui/react-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
+    "@radix-ui/react-radio-group": "npm:^1.1.1"
     "@radix-ui/react-slot": "npm:^1.0.3"
     "@radix-ui/react-visually-hidden": "npm:^1.0.3"
     class-variance-authority: "npm:^0.7.0"
@@ -3454,6 +3496,7 @@ __metadata:
     "@socket.io/redis-adapter": "npm:^8.2.0"
     "@squirrel/observability": "workspace:*"
     "@squirrel/queue": "workspace:*"
+    "@squirrel/regions": "workspace:*"
     "@tanstack/query-core": "npm:^5.21.0"
     "@types/bull": "npm:^4.10.0"
     "@types/express": "npm:^4.17.21"
@@ -3847,7 +3890,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@squirrel/regions@workspace:packages/regions":
+"@squirrel/regions@workspace:*, @squirrel/regions@workspace:packages/regions":
   version: 0.0.0-use.local
   resolution: "@squirrel/regions@workspace:packages/regions"
   dependencies:
@@ -3978,6 +4021,7 @@ __metadata:
     "@nestjs/swagger": "npm:^7.0.0"
     "@nestjs/testing": "npm:^10.0.0"
     "@nestjs/throttler": "npm:^5.0.0"
+    "@nestjs/typeorm": "npm:^10.0.0"
     "@nestjs/websockets": "npm:^10.0.0"
     "@types/express": "npm:^4.17.17"
     "@types/jest": "npm:^29.5.0"
@@ -3993,6 +4037,7 @@ __metadata:
     ioredis: "npm:^5.3.2"
     jest: "npm:^29.5.0"
     jsonwebtoken: "npm:^9.0.0"
+    pg: "npm:^8.11.3"
     prettier: "npm:^3.0.0"
     reflect-metadata: "npm:^0.1.13"
     rxjs: "npm:^7.8.1"
@@ -4002,6 +4047,7 @@ __metadata:
     ts-loader: "npm:^9.4.4"
     ts-node: "npm:^10.9.1"
     tsconfig-paths: "npm:^4.2.0"
+    typeorm: "npm:^0.3.17"
     typescript: "npm:^5.1.6"
     winston: "npm:^3.10.0"
   languageName: unknown

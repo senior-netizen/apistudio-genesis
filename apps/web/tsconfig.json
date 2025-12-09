@@ -19,6 +19,8 @@
       "idb": ["./src/vendor/idb.ts"],
       "react-syntax-highlighter": ["./src/vendor/react-syntax-highlighter.tsx"],
       "ulidx": ["./src/vendor/ulidx.ts"],
+      "@sdl/frontend": ["../../packages/frontend/utils/roles.ts"],
+      "@sdl/frontend/*": ["../../packages/frontend/*"],
       "@sdl/request-runner": ["../../libs/@sdl/request-runner/src/index.ts"],
       "@sdl/request-runner/*": ["../../libs/@sdl/request-runner/src/*"]
     },

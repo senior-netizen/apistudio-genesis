@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { DataGovernanceLayout } from './components/DataGovernanceLayout';
 import { RetentionPolicyPanel } from './retention';
 import { BackupList } from './backups';
@@ -21,8 +21,32 @@ const tabs = [
 export function GovernancePage() {
   const { workspaceId = '' } = useParams<{ workspaceId: string }>();
   const { t } = useI18n();
-  const [active, setActive] = useState<string>('retention');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (() => {
+    const candidate = searchParams.get('tab') ?? '';
+    return tabs.some((tab) => tab.id === candidate) ? candidate : 'retention';
+  })();
+  const [active, setActive] = useState<string>(initialTab);
   const orgId = workspaceId; // Fallback until org context is available
+
+  useEffect(() => {
+    const candidate = searchParams.get('tab') ?? '';
+    if (candidate && candidate !== active && tabs.some((tab) => tab.id === candidate)) {
+      setActive(candidate);
+    }
+  }, [active, searchParams]);
+
+  const setTab = useCallback(
+    (tabId: string) => {
+      setActive(tabId);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('tab', tabId);
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
 
   const sidebarTabs = useMemo(
     () =>
@@ -30,9 +54,9 @@ export function GovernancePage() {
         id: tab.id,
         label: t(tab.label),
         active: tab.id === active,
-        onSelect: () => setActive(tab.id),
+        onSelect: () => setTab(tab.id),
       })),
-    [active, t],
+    [active, setTab, t],
   );
 
   return (

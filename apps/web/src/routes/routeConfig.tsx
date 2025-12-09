@@ -14,27 +14,6 @@ import {
   Users,
 } from 'lucide-react';
 
-import ApiStudioPage from '../pages/ApiStudioPage';
-import MetricsInsightsPage from '../pages/MetricsInsightsPage';
-import PricingPage from '../pages/PricingPage';
-import MySubscriptionPage from '../pages/MySubscriptionPage';
-import PluginSdkPage from '../pages/PluginSdkPage';
-import HubPage from '../pages/HubPage';
-import HubExplorePage from '../pages/HubExplorePage';
-import WatchtowerPage from '../pages/WatchtowerPage';
-import ForgeDesignerPage from '../pages/ForgeDesignerPage';
-import SquirrelSyncPage from '../pages/SquirrelSyncPage';
-import CloudHubPage from '../pages/CloudHubPage';
-import SecureVaultPage from '../pages/SecureVaultPage';
-import PluginStorePage from '../pages/PluginStorePage';
-import CreditsWalletPage from '../pages/CreditsWalletPage';
-import BetaInvitesPage from '../modules/beta/BetaInvitesPage';
-import BetaFeedbackBoard from '../modules/beta/BetaFeedbackBoard';
-import BetaAnalytics from '../modules/beta/BetaAnalytics';
-import VerifyReceiptPage from '../pages/VerifyReceiptPage';
-import AdminPaymentsPage from '../pages/AdminPaymentsPage';
-import GovernancePage from '../features/governance';
-
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
 const RequestsPage = lazy(() => import('../pages/RequestsPage'));
@@ -47,6 +26,28 @@ const HubDetailsPage = lazy(() => import('../pages/HubDetailsPage'));
 const ProjectRequestDetailPage = lazy(() => import('../pages/ProjectRequestDetailPage'));
 const ResponseDetailPage = lazy(() => import('../pages/ResponseDetailPage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
+const ApiStudioPage = lazy(() => import('../pages/ApiStudioPage'));
+const MetricsInsightsPage = lazy(() => import('../pages/MetricsInsightsPage'));
+const PricingPage = lazy(() => import('../pages/PricingPage'));
+const MySubscriptionPage = lazy(() => import('../pages/MySubscriptionPage'));
+const PluginSdkPage = lazy(() => import('../pages/PluginSdkPage'));
+const HubPage = lazy(() => import('../pages/HubPage'));
+const HubExplorePage = lazy(() => import('../pages/HubExplorePage'));
+const WatchtowerPage = lazy(() => import('../pages/WatchtowerPage'));
+const ForgeDesignerPage = lazy(() => import('../pages/ForgeDesignerPage'));
+const SquirrelSyncPage = lazy(() => import('../pages/SquirrelSyncPage'));
+const CloudHubPage = lazy(() => import('../pages/CloudHubPage'));
+const SecureVaultPage = lazy(() => import('../pages/SecureVaultPage'));
+const PluginStorePage = lazy(() => import('../pages/PluginStorePage'));
+const CreditsWalletPage = lazy(() => import('../pages/CreditsWalletPage'));
+const VerifyReceiptPage = lazy(() => import('../pages/VerifyReceiptPage'));
+const AdminPaymentsPage = lazy(() => import('../pages/AdminPaymentsPage'));
+const BetaInvitesPage = lazy(() => import('../modules/beta/BetaInvitesPage'));
+const BetaFeedbackBoard = lazy(() => import('../modules/beta/BetaFeedbackBoard'));
+const BetaAnalytics = lazy(() => import('../modules/beta/BetaAnalytics'));
+const GovernancePage = lazy(() =>
+  import('../features/governance').then((mod) => ({ default: mod.GovernancePage })),
+);
 
 export type RouteGroup =
   | 'Dashboard'

@@ -12,6 +12,7 @@ import { loadWorkspace } from '../lib/storage/indexedDb';
 import type { WorkspaceBundle } from '../types/api';
 import { createSubscriptionSlice } from './subscriptionSlice';
 import { createCollaborationSlice, createInitialCollaborationState } from './collaborationSlice';
+import { createCollectionPermissionsSlice } from './collectionPermissionsSlice';
 
 export const useAppStore = create<AppState>(
   subscribeWithSelector(
@@ -74,8 +75,8 @@ export const useAppStore = create<AppState>(
       ...createHistorySlice(set, get, api),
       ...createMocksSlice(set, get, api),
       ...createSubscriptionSlice(set, get, api),
-      ...createCollaborationSlice(set, get, api)
+      ...createCollaborationSlice(set, get, api),
+      ...createCollectionPermissionsSlice(set, get, api)
     }))
   )
 );
-

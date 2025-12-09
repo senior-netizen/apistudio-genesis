@@ -1,4 +1,4 @@
-import { Card, Tag } from '@sdl/ui';
+import { Badge, Card } from '@sdl/ui';
 import { can, getEffectiveRole, RoleLevels } from '@sdl/frontend/utils/roles';
 
 interface RoleDebuggerProps {
@@ -23,8 +23,8 @@ export function RoleDebugger({ user, profile, effectiveRole }: RoleDebuggerProps
           <span>Effective role: {computedRole}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Tag tone={adminAccess ? 'success' : 'warning'}>Admin access</Tag>
-          <Tag tone="secondary">Level {RoleLevels[computedRole] ?? 0}</Tag>
+          <Badge variant={adminAccess ? 'success' : 'destructive'}>Admin access</Badge>
+          <Badge variant="secondary">Level {RoleLevels[computedRole] ?? 0}</Badge>
         </div>
       </div>
     </Card>

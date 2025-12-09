@@ -6,6 +6,7 @@ import type { HistorySlice } from './historySlice';
 import type { MocksSlice } from './mocksSlice';
 import type { SubscriptionSlice } from './subscriptionSlice';
 import type { CollaborationSlice } from './collaborationSlice';
+import type { CollectionPermissionsSlice } from './collectionPermissionsSlice';
 
 export type AppState = CollectionsSlice &
   RequestSlice &
@@ -14,7 +15,8 @@ export type AppState = CollectionsSlice &
   HistorySlice &
   MocksSlice &
   SubscriptionSlice &
-  CollaborationSlice & {
+  CollaborationSlice &
+  CollectionPermissionsSlice & {
     initialized: boolean;
     initializing: boolean;
     initializationError: string | null;

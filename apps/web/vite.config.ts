@@ -5,6 +5,7 @@ import path from 'node:path';
 import { createManualChunks } from '../../config/vite.manual-chunks';
 
 const requestRunnerPath = path.resolve(__dirname, '../../libs/@sdl/request-runner/src/index.ts');
+const frontendPath = path.resolve(__dirname, '../../packages/frontend');
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? process.env.VITE_API_URL ?? 'http://localhost:8081';
 
 // Allow turning manual chunking back on if we want to profile bundle splits again.
@@ -24,6 +25,8 @@ export default defineConfig({
       'react-syntax-highlighter': path.resolve(__dirname, './src/vendor/react-syntax-highlighter.tsx'),
       ulidx: path.resolve(__dirname, './src/vendor/ulidx.ts'),
       '@sdl/request-runner': requestRunnerPath,
+      '@sdl/frontend': frontendPath,
+      '@sdl/frontend/': path.resolve(frontendPath, './'),
       '@sdl/ui/command-palette': path.resolve(__dirname, '../../packages/ui/command-palette/index.ts'),
       '@sdl/ui/command-palette/': path.resolve(__dirname, '../../packages/ui/command-palette/'),
     }
@@ -81,6 +84,8 @@ export default defineConfig({
       'react-syntax-highlighter': path.resolve(__dirname, './src/vendor/react-syntax-highlighter.tsx'),
       ulidx: path.resolve(__dirname, './src/vendor/ulidx.ts'),
       '@sdl/request-runner': requestRunnerPath,
+      '@sdl/frontend': frontendPath,
+      '@sdl/frontend/': path.resolve(frontendPath, './'),
       '@sdl/ui/command-palette': path.resolve(__dirname, '../../packages/ui/command-palette/index.ts'),
       '@sdl/ui/command-palette/': path.resolve(__dirname, '../../packages/ui/command-palette/'),
     },

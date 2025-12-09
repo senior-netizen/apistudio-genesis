@@ -9,6 +9,23 @@ interface WorkspaceResponse {
   collaboration?: CollaborationState;
 }
 
+export interface WorkspaceListItem {
+  id: string;
+  name: string;
+  ownerId?: string;
+  createdAt?: string;
+}
+
+export interface WorkspaceAuditLog {
+  id: string;
+  workspaceId: string;
+  actorId?: string | null;
+  action: string;
+  targetId?: string | null;
+  metadata?: any;
+  createdAt: string;
+}
+
 export async function fetchWorkspaceBundle(): Promise<WorkspaceBundle> {
   const response = await apiFetch('/workspace', { method: 'GET' });
   if (!response.ok) {
@@ -23,6 +40,61 @@ export async function fetchWorkspaceBundle(): Promise<WorkspaceBundle> {
     mocks: payload.mocks ?? [],
     collaboration: payload.collaboration,
   };
+}
+
+export async function exportWorkspace(workspaceId: string): Promise<WorkspaceBundle> {
+  const response = await apiFetch(`/workspace/${workspaceId}/export`, { method: 'GET' });
+  if (!response.ok) {
+    throw new Error('Failed to export workspace');
+  }
+  return response.json();
+}
+
+export async function importWorkspace(
+  workspaceId: string,
+  bundle: WorkspaceBundle,
+  options: { dryRun?: boolean } = {},
+) {
+  const query = options.dryRun ? '?dryRun=true' : '';
+  const response = await apiFetch(`/workspace/${workspaceId}/import${query}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bundle),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to import workspace');
+  }
+  return response.json();
+}
+
+export async function fetchWorkspaceAuditLogs(
+  workspaceId: string,
+  options: { limit?: number; actions?: string[] } = {},
+): Promise<WorkspaceAuditLog[]> {
+  const params = new URLSearchParams();
+  if (options.limit) {
+    params.set('limit', String(options.limit));
+  }
+  if (options.actions?.length) {
+    params.set('actions', options.actions.join(','));
+  }
+  const query = params.toString();
+  const response = await apiFetch(
+    `/workspaces/${workspaceId}/audit-logs${query ? `?${query}` : ''}`,
+    { method: 'GET' },
+  );
+  if (!response.ok) {
+    throw new Error('Failed to load audit logs');
+  }
+  return response.json();
+}
+
+export async function listWorkspaces(): Promise<WorkspaceListItem[]> {
+  const response = await apiFetch('/workspaces', { method: 'GET' });
+  if (!response.ok) {
+    throw new Error('Failed to load workspaces');
+  }
+  return response.json();
 }
 
 export async function createWorkspace(payload: Partial<WorkspaceResponse> = {}): Promise<WorkspaceBundle> {

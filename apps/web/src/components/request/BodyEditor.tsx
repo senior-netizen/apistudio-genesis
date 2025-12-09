@@ -8,6 +8,7 @@ import { createId } from '../../store/utils';
 
 interface BodyEditorProps {
   request: ApiRequest;
+  readOnly?: boolean;
 }
 
 const bodyModes: Array<{ id: RequestBody['mode']; label: string }> = [
@@ -20,10 +21,12 @@ const bodyModes: Array<{ id: RequestBody['mode']; label: string }> = [
   { id: 'binary', label: 'Binary' }
 ];
 
-export default function BodyEditor({ request }: BodyEditorProps) {
+export default function BodyEditor({ request, readOnly }: BodyEditorProps) {
   const updateWorkingRequest = useAppStore((state) => state.updateWorkingRequest);
+  const disabled = Boolean(readOnly);
 
   const setMode = (mode: RequestBody['mode']) => {
+    if (disabled) return;
     updateWorkingRequest((draft) => ({
       ...draft,
       body: { ...draft.body, mode }
@@ -38,6 +41,7 @@ export default function BodyEditor({ request }: BodyEditorProps) {
   };
 
   const ensureContentType = (value: string) => {
+    if (disabled) return;
     const hasHeader = request.headers.some((header) => header.key.toLowerCase() === 'content-type');
     if (hasHeader) return;
     updateWorkingRequest((draft) => ({
@@ -50,6 +54,7 @@ export default function BodyEditor({ request }: BodyEditorProps) {
   };
 
   const updateBody = (changes: Partial<RequestBody>) => {
+    if (disabled) return;
     updateWorkingRequest((draft) => ({
       ...draft,
       body: { ...draft.body, ...changes }
@@ -126,11 +131,11 @@ export default function BodyEditor({ request }: BodyEditorProps) {
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Button size="sm" variant="subtle" onClick={prettyPrint}>
+                <Button size="sm" variant="subtle" onClick={prettyPrint} disabled={disabled}>
                   <Code2 className="mr-2 h-4 w-4" aria-hidden />
                   Pretty print
                 </Button>
-                <Button size="sm" variant="ghost" onClick={minify}>
+                <Button size="sm" variant="ghost" onClick={minify} disabled={disabled}>
                   Minify
                 </Button>
               </div>
@@ -139,6 +144,7 @@ export default function BodyEditor({ request }: BodyEditorProps) {
                 onChange={handleTextChange('json')}
                 rows={12}
                 className="w-full rounded-xl border border-border/60 bg-background/80 p-4 font-mono text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-ring"
+                readOnly={disabled}
               />
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-4">
@@ -158,6 +164,7 @@ export default function BodyEditor({ request }: BodyEditorProps) {
             onChange={handleTextChange('xml')}
             rows={10}
             className="w-full rounded-xl border border-border/60 bg-background/80 p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            readOnly={disabled}
           />
         );
       case 'raw':
@@ -167,6 +174,7 @@ export default function BodyEditor({ request }: BodyEditorProps) {
             onChange={handleTextChange('raw')}
             rows={10}
             className="w-full rounded-xl border border-border/60 bg-background/80 p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            readOnly={disabled}
           />
         );
       case 'form-data':
@@ -174,22 +182,24 @@ export default function BodyEditor({ request }: BodyEditorProps) {
           <div className="space-y-3">
             {(body.formData ?? []).map((item) => (
               <div key={item.id} className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
-                <input type="checkbox" checked={item.enabled} onChange={() => toggleFormData(item.id as string)} />
+                <input type="checkbox" checked={item.enabled} onChange={() => toggleFormData(item.id as string)} disabled={disabled} />
                 <input
                   value={item.key}
                   onChange={updateFormData(item.id as string, 'key')}
                   placeholder="file"
                   className="rounded-lg border border-border/60 bg-background/80 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  readOnly={disabled}
                 />
                 <input
                   value={item.value}
                   onChange={updateFormData(item.id as string, 'value')}
                   placeholder="README.md"
                   className="rounded-lg border border-border/60 bg-background/80 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  readOnly={disabled}
                 />
               </div>
             ))}
-            <Button size="sm" variant="ghost" onClick={addFormDataRow}>
+            <Button size="sm" variant="ghost" onClick={addFormDataRow} disabled={disabled}>
               <Upload className="mr-2 h-4 w-4" aria-hidden />
               Add form field
             </Button>
@@ -200,22 +210,24 @@ export default function BodyEditor({ request }: BodyEditorProps) {
           <div className="space-y-3">
             {(body.urlEncoded ?? []).map((item) => (
               <div key={item.id} className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
-                <input type="checkbox" checked={item.enabled} onChange={() => toggleUrlEncoded(item.id as string)} />
+                <input type="checkbox" checked={item.enabled} onChange={() => toggleUrlEncoded(item.id as string)} disabled={disabled} />
                 <input
                   value={item.key}
                   onChange={updateUrlEncoded(item.id as string, 'key')}
                   placeholder="filter"
                   className="rounded-lg border border-border/60 bg-background/80 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  readOnly={disabled}
                 />
                 <input
                   value={item.value}
                   onChange={updateUrlEncoded(item.id as string, 'value')}
                   placeholder="archived"
                   className="rounded-lg border border-border/60 bg-background/80 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  readOnly={disabled}
                 />
               </div>
             ))}
-            <Button size="sm" variant="ghost" onClick={addUrlEncodedRow}>
+            <Button size="sm" variant="ghost" onClick={addUrlEncodedRow} disabled={disabled}>
               <ListChecks className="mr-2 h-4 w-4" aria-hidden />
               Add field
             </Button>

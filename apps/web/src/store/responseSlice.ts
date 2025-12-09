@@ -5,6 +5,7 @@ import type { AppState } from './types';
 
 export interface ResponseSlice {
   response?: ResponseSnapshot;
+  responseHistory: ResponseSnapshot[];
   responseError?: string;
   preRequestOutcome?: ScriptOutcome;
   testOutcome?: ScriptOutcome;
@@ -20,6 +21,7 @@ export interface ResponseSlice {
 
 export const createResponseSlice: StateCreator<AppState, [], [], ResponseSlice> = (set) => ({
   response: undefined,
+  responseHistory: [],
   responseError: undefined,
   preRequestOutcome: undefined,
   testOutcome: undefined,
@@ -28,6 +30,12 @@ export const createResponseSlice: StateCreator<AppState, [], [], ResponseSlice> 
   setResponse(response) {
     set((state) => {
       state.response = response;
+      if (response) {
+        state.responseHistory.unshift(response);
+        if (state.responseHistory.length > 5) {
+          state.responseHistory.length = 5;
+        }
+      }
     });
   },
   setResponseError(message) {

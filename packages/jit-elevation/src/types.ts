@@ -83,5 +83,5 @@ export interface JitAuditEntry {
     | 'jit.request.rejected'
     | 'jit.request.cancelled'
     | 'jit.request.expired';
-  payload: Record<string, unknown>;
+  payload: ElevationRequest | Record<string, unknown>;
 }
