@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CacheService } from '../../infra/cache/cache.service';
 
@@ -129,9 +130,9 @@ export class MocksService {
                 method: data.method.toUpperCase(),
                 path: data.path,
                 statusCode: data.statusCode || 200,
-                responseBody: data.responseBody,
-                responseHeaders: data.responseHeaders || null,
-                delay: data.delay || null,
+                responseBody: data.responseBody ?? Prisma.JsonNull,
+                responseHeaders: data.responseHeaders ?? Prisma.JsonNull,
+                delay: data.delay ?? null,
             },
         });
 

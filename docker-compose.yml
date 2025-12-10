@@ -1,6 +1,14 @@
 x-restart: &restart
   restart: unless-stopped
 
+networks:
+  squirrel-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+
 services:
   gateway:
     build:
@@ -29,14 +37,21 @@ services:
     build:
       context: .
       dockerfile: squirrel/backend/Dockerfile
+    env_file:
+      - .env.docker
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/squirrel?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-secret-key-change-in-production
-      - SESSION_SECRET=your-session-secret-change-in-production
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:-your-session-secret-change-in-production}
+      - PORT=${BACKEND_PORT:-8081}
+    ports:
+      - "8081:8081"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - squirrel-network
     profiles: ["minimal", "standard", "full"]
@@ -44,32 +59,141 @@ services:
   backend-worker:
     build:
       context: .
+      dockerfile: squirrel/backend/Dockerfile
+    env_file:
+      - .env.docker
+    command: ["node", "dist/workers/run.worker.js"]
+    depends_on:
+      backend:
+        condition: service_started
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - squirrel-network
+    profiles: ["standard", "full"]
+    <<: *restart
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/ai-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  api-runner-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/api-runner-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/auth-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/billing-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  collaboration-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/collaboration-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  logs-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/logs-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/notifications-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  organization-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/organization-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
     <<: *restart
 
   support-service:
     build:
       context: .
-      dockerfile: ./squirrel/microservices/support-service/Dockerfile
-      network: host
+      dockerfile: squirrel/microservices/support-service/Dockerfile
     env_file:
       - .env.docker
-    environment:
-      NODE_ENV: production
-      PORT: 3004
-      DB_HOST: ${POSTGRES_HOST:-postgres}
-      DB_PORT: ${POSTGRES_PORT:-5432}
-      DB_USERNAME: ${POSTGRES_USER:-squirrel}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-squirrel}
-      DB_DATABASE: ${POSTGRES_DB:-squirrel}
-      JWT_SECRET: ${JWT_SECRET:-change_me_in_dotenv}
-    expose:
-      - "3004"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  user-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/user-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
+    <<: *restart
+
+  workspace-service:
+    build:
+      context: .
+      dockerfile: squirrel/microservices/workspace-service/Dockerfile
+    env_file:
+      - .env.docker
+    networks:
+      - squirrel-network
+    profiles: ["full"]
     <<: *restart
 
   postgres:
@@ -87,6 +211,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - squirrel-network
+    profiles: ["minimal", "standard", "full"]
     <<: *restart
 
   redis:
@@ -99,8 +226,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - squirrel-network
+    profiles: ["minimal", "standard", "full"]
     <<: *restart
-
-volumes:
-  postgres_data:
-  redis_data:
