@@ -10,7 +10,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Controller({ version: '1' })
 @UseGuards(JwtAuthGuard)
 export class RequestsController {
-  constructor(private readonly requests: RequestsService) {}
+  constructor(private readonly requests: RequestsService) { }
 
   @Get('collections/:collectionId/requests')
   async list(
@@ -48,6 +48,11 @@ export class RequestsController {
   @Post('requests/:id/run')
   async run(@Param('id') id: string, @CurrentUser() user: { id: string }) {
     return this.requests.run(id, user.id);
+  }
+
+  @Post('requests/:id/graphql/introspect')
+  async introspectGraphQL(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.requests.introspectGraphQLEndpoint(id, user.id);
   }
 
   @Get('requests/:id/history')

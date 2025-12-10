@@ -15,7 +15,7 @@ export class RequestsService {
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly queues: QueueService,
-  ) {}
+  ) { }
 
   async list(collectionId: string, userId: string, page = 1, pageSize = 20) {
     const limit = Math.min(pageSize, 100);
@@ -140,6 +140,91 @@ export class RequestsService {
       this.prisma.requestRun.count({ where: { requestId } }),
     ]);
     return { items, total, page, pageSize: limit };
+  }
+
+  async introspectGraphQLEndpoint(requestId: string, userId: string) {
+    const request = await this.getRequestForOwner(requestId, userId);
+
+    // Cache key for GraphQL schema
+    const cacheKey = `graphql:schema:${requestId}`;
+    const cached = await this.cache.get(cacheKey);
+    if (cached) {
+      return { schema: cached, cached: true };
+    }
+
+    // GraphQL introspection query
+    const introspectionQuery = `
+      query IntrospectionQuery {
+        __schema {
+          queryType { name }
+          mutationType { name }
+          subscriptionType { name }
+          types {
+            kind
+            name
+            description
+            fields(includeDeprecated: true) {
+              name
+              description
+              args {
+                name
+                description
+                type {
+                  kind
+                  name
+                  ofType {
+                    kind
+                    name
+                  }
+                }
+              }
+              type {
+                kind
+                name
+                ofType {
+                  kind
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      // Make GraphQL introspection request
+      const response = await fetch(request.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(typeof request.headers === 'object' ? request.headers : {}),
+        },
+        body: JSON.stringify({ query: introspectionQuery }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`GraphQL introspection failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      }
+
+      // Cache the schema for 5 minutes
+      await this.cache.set(cacheKey, data.data, 300);
+
+      return { schema: data.data, cached: false };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return {
+        error: 'INTROSPECTION_FAILED',
+        message,
+        cached: false,
+      };
+    }
   }
 
   private async invalidateCache(id: string, collectionId: string) {

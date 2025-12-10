@@ -3,71 +3,47 @@ x-restart: &restart
 
 services:
   gateway:
-    image: nginx:alpine
-    depends_on:
-      - frontend
-      - backend
+    build:
+      context: .
+      dockerfile: squirrel/gateway/Dockerfile
     ports:
-      - "8080:80"
-    volumes:
-      - ./config/nginx/gateway.conf:/etc/nginx/conf.d/default.conf:ro
-    <<: *restart
+      - "8080:8080"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - squirrel-network
+    profiles: ["minimal", "standard", "full"]
 
   frontend:
     build:
       context: .
-      dockerfile: ./apps/web/Dockerfile
-      network: host
+      dockerfile: squirrel/frontend/Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-/api}
-    environment:
-      NODE_ENV: production
-    expose:
-      - "80"
-    <<: *restart
+        - VITE_API_URL=http://localhost:8080
+    networks:
+      - squirrel-network
+    profiles: ["standard", "full"]
 
   backend:
     build:
       context: .
-      dockerfile: ./squirrel/backend/Dockerfile
-      network: host
-    env_file:
-      - .env.docker
+      dockerfile: squirrel/backend/Dockerfile
     environment:
-      NODE_ENV: production
-      PORT: ${BACKEND_PORT:-8081}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-squirrel}:${POSTGRES_PASSWORD:-squirrel}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-squirrel}?schema=public
-      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
-      WS_REDIS_HOST: ${REDIS_HOST:-redis}
-      WS_REDIS_PORT: ${REDIS_PORT:-6379}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://gateway}
-      JWT_SECRET: ${JWT_SECRET:-change_me_in_dotenv}
-    expose:
-      - "${BACKEND_PORT:-8081}"
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/squirrel?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-secret-key-change-in-production
+      - SESSION_SECRET=your-session-secret-change-in-production
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    <<: *restart
+      - postgres
+      - redis
+    networks:
+      - squirrel-network
+    profiles: ["minimal", "standard", "full"]
 
   backend-worker:
     build:
       context: .
-      dockerfile: ./squirrel/backend/Dockerfile
-      network: host
-    command: ["node", "dist/workers/run.worker.js"]
-    env_file:
-      - .env.docker
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-squirrel}:${POSTGRES_PASSWORD:-squirrel}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-squirrel}?schema=public
-      REDIS_URL: redis://${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
-      WS_REDIS_HOST: ${REDIS_HOST:-redis}
-      WS_REDIS_PORT: ${REDIS_PORT:-6379}
-      JWT_SECRET: ${JWT_SECRET:-change_me_in_dotenv}
-    depends_on:
-      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy

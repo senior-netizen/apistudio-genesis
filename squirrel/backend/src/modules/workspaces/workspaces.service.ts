@@ -33,7 +33,7 @@ export class WorkspacesService {
     private readonly queues: QueueService,
     private readonly realtime: RealtimeGateway,
     @Inject(appConfig.KEY) private readonly config: ConfigType<typeof appConfig>,
-  ) {}
+  ) { }
 
   async listForUser(userId: string, page = 1, pageSize = 20) {
     const limit = Math.min(pageSize, 100);
@@ -170,7 +170,7 @@ export class WorkspacesService {
         token,
         role: dto.role,
         expiresAt,
-        metadata: dto.metadata,
+        metadata: dto.metadata as any,
       },
     });
 
@@ -485,10 +485,10 @@ export class WorkspacesService {
   private mapRequest(request: any): WorkspaceRequest {
     const headers = request.headers && typeof request.headers === 'object'
       ? Object.entries(request.headers as Record<string, any>).map(([key, value]) => ({
-          key,
-          value: typeof value === 'string' ? value : JSON.stringify(value),
-          enabled: true,
-        }))
+        key,
+        value: typeof value === 'string' ? value : JSON.stringify(value),
+        enabled: true,
+      }))
       : [];
     return {
       id: request.id,

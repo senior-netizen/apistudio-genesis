@@ -30,6 +30,9 @@ import { BillingModule } from './modules/billing/billing.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { SupportModule } from './modules/support/support.module';
 import { SecurityCenterModule } from './modules/security-center/security-center.module';
+import { DocumentationModule } from './modules/documentation/documentation.module';
+import { MocksModule } from './modules/mocks/mocks.module';
+import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { CsrfService } from './common/security/csrf.service';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { EventsModule } from './events/events.module';
@@ -66,6 +69,9 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     MarketplaceModule,
     SupportModule,
     SecurityCenterModule,
+    DocumentationModule,
+    MocksModule,
+    MonitoringModule,
   ],
   controllers: [HeartbeatController],
   providers: [

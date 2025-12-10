@@ -35,6 +35,8 @@ model User {
   subscriptions      HubSubscription[]
   creditsTransactions CreditsTransaction[]
   invoices           BillingInvoice[]
+  adminApiKeysCreated AdminApiKey[]
+  magicInviteLinks   MagicInviteLink[]
 }
 
 model Session {
@@ -100,6 +102,12 @@ model Workspace {
   subscriptions HubSubscription[]
   creditsTransactions CreditsTransaction[]
   invoices      BillingInvoice[]
+  adminApiKeys  AdminApiKey[]
+  magicInviteLinks MagicInviteLink[]
+  securityEvents SecurityEvent[]
+  documentationConfigs DocumentationConfig[]
+  mockServers   MockServer[]
+  monitors      Monitor[]
 
   @@index([ownerId])
 }
@@ -401,6 +409,7 @@ model Collection {
   updatedAt    DateTime    @updatedAt @map("updated_at")
   children     Collection[] @relation("CollectionHierarchy")
   requests     Request[]
+  documentationConfig DocumentationConfig?
 
   @@index([workspaceId])
   @@index([workspaceId, createdAt])
@@ -408,20 +417,24 @@ model Collection {
 }
 
 model Request {
-  id            String        @id @default(cuid())
-  collection    Collection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  collectionId  String        @map("collection_id")
-  name          String
-  method        String
-  url           String
-  headers       Json          @default("{}")
-  body          Json?
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  runs          RequestRun[]
-  pairSessions  PairSession[]
-  docSnapshots  DocSnapshot[]
-  requestLogs   RequestLog[]
+  id                String        @id @default(cuid())
+  collection        Collection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId      String        @map("collection_id")
+  name              String
+  method            String
+  url               String
+  headers           Json          @default("{}")
+  body              Json?
+  preRequestScript  String?       @map("pre_request_script") @db.Text
+  postRequestScript String?       @map("post_request_script") @db.Text
+  testScript        String?       @map("test_script") @db.Text
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  runs              RequestRun[]
+  pairSessions      PairSession[]
+  docSnapshots      DocSnapshot[]
+  requestLogs       RequestLog[]
+  monitors          Monitor[]
 
   @@index([collectionId])
   @@index([collectionId, createdAt])
@@ -438,6 +451,8 @@ model RequestRun {
   responseBody Json?
   error        String?
   durationMs   Int?
+  testResults  Json?    @map("test_results")
+  scriptLogs   String?  @map("script_logs") @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([requestId, createdAt])
@@ -785,4 +800,92 @@ model RequestLog {
 
   @@index([workspaceId, timestamp])
   @@index([requestId, timestamp])
+}
+
+// API Documentation Generator Models
+model DocumentationConfig {
+  id            String     @id @default(cuid())
+  workspace     Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId   String     @map("workspace_id")
+  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId  String     @unique @map("collection_id")
+  title         String
+  description   String?    @db.Text
+  version       String     @default("1.0.0")
+  logoUrl       String?    @map("logo_url")
+  customCss     String?    @map("custom_css") @db.Text
+  theme         String     @default("light")
+  published     Boolean    @default(false)
+  publishedUrl  String?    @unique @map("published_url")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@index([published])
+}
+
+// Mock Server Models
+model MockServer {
+  id          String      @id @default(cuid())
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+  workspaceId String      @map("workspace_id")
+  name        String
+  baseUrl     String      @unique @map("base_url")
+  enabled     Boolean     @default(true)
+  routes      MockRoute[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+}
+
+model MockRoute {
+  id              String     @id @default(cuid())
+  mockServer      MockServer @relation(fields: [mockServerId], references: [id], onDelete: Cascade)
+  mockServerId    String     @map("mock_server_id")
+  method          String
+  path            String
+  statusCode      Int        @default(200) @map("status_code")
+  responseBody    Json       @map("response_body")
+  responseHeaders Json?      @map("response_headers")
+  delay           Int?
+  conditions      Json?
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  @@index([mockServerId, method, path])
+}
+
+// API Monitoring Models
+model Monitor {
+  id              String       @id @default(cuid())
+  workspace       Workspace    @relation(fields: [workspaceId], references: [id])
+  workspaceId     String       @map("workspace_id")
+  request         Request      @relation(fields: [requestId], references: [id])
+  requestId       String       @map("request_id")
+  name            String
+  schedule        String
+  enabled         Boolean      @default(true)
+  regions         String[]
+  alertOnFailure  Boolean      @default(true) @map("alert_on_failure")
+  alertChannels   Json?        @map("alert_channels")
+  runs            MonitorRun[]
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@index([enabled])
+}
+
+model MonitorRun {
+  id           String   @id @default(cuid())
+  monitor      Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  monitorId    String   @map("monitor_id")
+  status       String
+  statusCode   Int?     @map("status_code")
+  responseTime Int      @map("response_time")
+  errorMessage String?  @map("error_message") @db.Text
+  region       String
+  executedAt   DateTime @default(now()) @map("executed_at")
+
+  @@index([monitorId, executedAt])
 }
