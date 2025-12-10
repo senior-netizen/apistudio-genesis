@@ -5,7 +5,7 @@ export async function createCollection(
     projectId: string,
     data: { name: string; description?: string }
 ): Promise<ApiCollection> {
-    const response = await apiFetch(`/workspace/projects/${projectId}/collections`, {
+    const response = await apiFetch(`/v1/workspace/projects/${projectId}/collections`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -17,7 +17,7 @@ export async function createCollection(
 }
 
 export async function updateCollection(id: string, updates: Partial<ApiCollection>): Promise<ApiCollection> {
-    const response = await apiFetch(`/workspace/collections/${id}`, {
+    const response = await apiFetch(`/v1/workspace/collections/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -29,7 +29,7 @@ export async function updateCollection(id: string, updates: Partial<ApiCollectio
 }
 
 export async function deleteCollection(id: string): Promise<void> {
-    const response = await apiFetch(`/workspace/collections/${id}`, {
+    const response = await apiFetch(`/v1/workspace/collections/${id}`, {
         method: 'DELETE',
     });
     if (!response.ok) {
@@ -38,7 +38,7 @@ export async function deleteCollection(id: string): Promise<void> {
 }
 
 export async function reorderCollections(projectId: string, orderedIds: string[]): Promise<void> {
-    const response = await apiFetch(`/workspace/projects/${projectId}/collections/reorder`, {
+    const response = await apiFetch(`/v1/workspace/projects/${projectId}/collections/reorder`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderedIds }),

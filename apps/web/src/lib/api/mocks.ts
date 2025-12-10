@@ -2,7 +2,7 @@ import type { MockRoute } from '../../types/api';
 import { apiFetch } from './client';
 
 export async function createMock(data: Omit<MockRoute, 'id'>): Promise<MockRoute> {
-    const response = await apiFetch('/workspace/mocks', {
+    const response = await apiFetch('/v1/workspace/mocks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -14,7 +14,7 @@ export async function createMock(data: Omit<MockRoute, 'id'>): Promise<MockRoute
 }
 
 export async function updateMock(id: string, updates: Partial<MockRoute>): Promise<MockRoute> {
-    const response = await apiFetch(`/workspace/mocks/${id}`, {
+    const response = await apiFetch(`/v1/workspace/mocks/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -26,7 +26,7 @@ export async function updateMock(id: string, updates: Partial<MockRoute>): Promi
 }
 
 export async function deleteMock(id: string): Promise<void> {
-    const response = await apiFetch(`/workspace/mocks/${id}`, {
+    const response = await apiFetch(`/v1/workspace/mocks/${id}`, {
         method: 'DELETE',
     });
     if (!response.ok) {
@@ -35,7 +35,7 @@ export async function deleteMock(id: string): Promise<void> {
 }
 
 export async function toggleMockServer(): Promise<{ running: boolean }> {
-    const response = await apiFetch('/workspace/mocks/toggle', {
+    const response = await apiFetch('/v1/workspace/mocks/toggle', {
         method: 'POST',
     });
     if (!response.ok) {

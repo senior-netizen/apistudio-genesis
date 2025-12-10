@@ -9,6 +9,7 @@ export interface LoginResponse {
     email: string;
     roles?: string[];
   };
+  csrfToken?: string;
 }
 
 export const login = async (email: string, password: string): Promise<LoginResponse> => {

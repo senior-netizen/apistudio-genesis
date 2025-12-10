@@ -29,13 +29,15 @@ npm install -g @squirrel/api-cli
 
 Configuration is stored in `~/.squirrel/config.json`. The file tracks:
 
-- Gateway base URL (defaults to `http://localhost:4000`)
+- Gateway base URL (defaults to `http://localhost:8081`, matching the web app and VS Code extension)
 - Access token
 - Active workspace and environment IDs
 - Optional telemetry flag
 - Named profiles (e.g., `default`, `staging`, `prod`)
 
 Use `squirrel config profile list` to view profiles and `squirrel config profile use <name>` to switch between them.
+
+The CLI mirrors the CSRF handling used by the VS Code and web clients: it fetches a token from `/auth/csrf` before login or other unsafe requests, retries on `403` when needed, and persists the latest token in your active profile.
 
 ## Quick Start
 

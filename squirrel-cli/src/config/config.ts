@@ -10,6 +10,7 @@ export interface ConfigProfile {
   activeWorkspaceId?: string;
   activeEnvironmentId?: string;
   telemetryEnabled?: boolean;
+  csrfToken?: string;
 }
 
 export interface ConfigData {
@@ -24,7 +25,8 @@ let cachedConfig: ConfigData | null = null;
 
 const defaultProfile = (): ConfigProfile => ({
   name: 'default',
-  baseUrl: process.env.SQUIRREL_BASE_URL ?? 'http://localhost:4000'
+  baseUrl: process.env.SQUIRREL_BASE_URL ?? 'http://localhost:8081',
+  csrfToken: undefined
 });
 
 const defaultConfig = (): ConfigData => ({
@@ -103,6 +105,7 @@ export const clearActiveToken = async (): Promise<void> => {
   const config = await loadConfig();
   const profile = getActiveProfile(config);
   profile.accessToken = undefined;
+  profile.csrfToken = undefined;
   await saveConfig(config);
 };
 

@@ -5,7 +5,7 @@ export async function createRequest(
     collectionId: string,
     data: Partial<ApiRequest>
 ): Promise<ApiRequest> {
-    const response = await apiFetch(`/workspace/collections/${collectionId}/requests`, {
+    const response = await apiFetch(`/v1/workspace/collections/${collectionId}/requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -17,7 +17,7 @@ export async function createRequest(
 }
 
 export async function updateRequest(id: string, updates: Partial<ApiRequest>): Promise<ApiRequest> {
-    const response = await apiFetch(`/workspace/requests/${id}`, {
+    const response = await apiFetch(`/v1/workspace/requests/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -29,7 +29,7 @@ export async function updateRequest(id: string, updates: Partial<ApiRequest>): P
 }
 
 export async function deleteRequest(id: string): Promise<void> {
-    const response = await apiFetch(`/workspace/requests/${id}`, {
+    const response = await apiFetch(`/v1/workspace/requests/${id}`, {
         method: 'DELETE',
     });
     if (!response.ok) {
@@ -38,7 +38,7 @@ export async function deleteRequest(id: string): Promise<void> {
 }
 
 export async function duplicateRequest(id: string): Promise<ApiRequest> {
-    const response = await apiFetch(`/workspace/requests/${id}/duplicate`, {
+    const response = await apiFetch(`/v1/workspace/requests/${id}/duplicate`, {
         method: 'POST',
     });
     if (!response.ok) {
@@ -51,7 +51,7 @@ export async function saveExample(
     requestId: string,
     example: Omit<ApiExample, 'id' | 'createdAt'> & { responseBody?: string }
 ): Promise<ApiExample> {
-    const response = await apiFetch(`/workspace/requests/${requestId}/examples`, {
+    const response = await apiFetch(`/v1/workspace/requests/${requestId}/examples`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(example),
@@ -63,7 +63,7 @@ export async function saveExample(
 }
 
 export async function reorderRequests(collectionId: string, orderedIds: string[]): Promise<void> {
-    const response = await apiFetch(`/workspace/collections/${collectionId}/requests/reorder`, {
+    const response = await apiFetch(`/v1/workspace/collections/${collectionId}/requests/reorder`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderedIds }),

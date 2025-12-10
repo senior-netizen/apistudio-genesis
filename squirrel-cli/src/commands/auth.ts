@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { loginPrompt } from '../utils/prompts';
 import { createSpinner } from '../utils/spinner';
 import { resetClient } from '../api/client';
+import { clearCsrfToken, ensureCsrfToken, persistCsrfToken } from '../utils/csrf';
 
 export const registerAuthCommands = (program: Command): void => {
   program
@@ -35,9 +36,13 @@ export const registerAuthCommands = (program: Command): void => {
 
       const spinner = createSpinner('Authenticating with Squirrel...');
       try {
+        await ensureCsrfToken(true, profile.baseUrl);
         const response = await loginRequest(email, password);
         profile.accessToken = response.token;
         await upsertProfile(profile);
+        if (response.csrfToken) {
+          await persistCsrfToken(response.csrfToken);
+        }
         resetClient();
         spinner.succeed('Logged in successfully.');
         logger.success(`Welcome ${response.user.name ?? response.user.email}!`);
@@ -53,6 +58,7 @@ export const registerAuthCommands = (program: Command): void => {
     .action(async () => {
       const spinner = createSpinner('Clearing local session...');
       await clearActiveToken();
+      await clearCsrfToken();
       resetClient();
       spinner.succeed('Logged out.');
     });

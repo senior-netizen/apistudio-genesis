@@ -26,14 +26,15 @@ export const useAppStore = create<AppState>(
           state.initializing = true;
           state.initializationError = null;
         });
+
         let bundle: WorkspaceBundle | undefined;
+        let loadError: string | null = null;
         try {
           bundle = await loadWorkspace();
         } catch (error) {
-          set((state) => {
-            state.initializationError = error instanceof Error ? error.message : 'Unable to load workspace';
-          });
+          loadError = error instanceof Error ? error.message : 'Unable to load workspace';
         }
+
         const resolvedBundle = bundle ?? { version: 1, projects: [], environments: [], history: [], mocks: [] };
         set((state) => {
           state.projects = resolvedBundle.projects;
@@ -49,9 +50,7 @@ export const useAppStore = create<AppState>(
           state.globalVariables = [];
           state.initialized = true;
           state.initializing = false;
-          if (!bundle) {
-            state.initializationError = state.initializationError ?? 'Unable to load workspace';
-          }
+          state.initializationError = loadError;
         });
         get().restoreRequestTabs();
         const request = get()

@@ -2,7 +2,7 @@ import type { ApiEnvironment } from '../../types/api';
 import { apiFetch } from './client';
 
 export async function createEnvironment(data: Omit<ApiEnvironment, 'id'>): Promise<ApiEnvironment> {
-    const response = await apiFetch('/workspace/environments', {
+    const response = await apiFetch('/v1/workspace/environments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -14,7 +14,7 @@ export async function createEnvironment(data: Omit<ApiEnvironment, 'id'>): Promi
 }
 
 export async function updateEnvironment(id: string, updates: Partial<ApiEnvironment>): Promise<ApiEnvironment> {
-    const response = await apiFetch(`/workspace/environments/${id}`, {
+    const response = await apiFetch(`/v1/workspace/environments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -26,7 +26,7 @@ export async function updateEnvironment(id: string, updates: Partial<ApiEnvironm
 }
 
 export async function deleteEnvironment(id: string): Promise<void> {
-    const response = await apiFetch(`/workspace/environments/${id}`, {
+    const response = await apiFetch(`/v1/workspace/environments/${id}`, {
         method: 'DELETE',
     });
     if (!response.ok) {

@@ -27,7 +27,7 @@ export interface WorkspaceAuditLog {
 }
 
 export async function fetchWorkspaceBundle(): Promise<WorkspaceBundle> {
-  const response = await apiFetch('/workspace', { method: 'GET' });
+  const response = await apiFetch('/v1/workspace', { method: 'GET' });
   if (!response.ok) {
     throw new Error('Failed to load workspace');
   }
@@ -43,7 +43,7 @@ export async function fetchWorkspaceBundle(): Promise<WorkspaceBundle> {
 }
 
 export async function exportWorkspace(workspaceId: string): Promise<WorkspaceBundle> {
-  const response = await apiFetch(`/workspace/${workspaceId}/export`, { method: 'GET' });
+  const response = await apiFetch(`/v1/workspace/${workspaceId}/export`, { method: 'GET' });
   if (!response.ok) {
     throw new Error('Failed to export workspace');
   }
@@ -56,7 +56,7 @@ export async function importWorkspace(
   options: { dryRun?: boolean } = {},
 ) {
   const query = options.dryRun ? '?dryRun=true' : '';
-  const response = await apiFetch(`/workspace/${workspaceId}/import${query}`, {
+  const response = await apiFetch(`/v1/workspace/${workspaceId}/import${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(bundle),
@@ -80,7 +80,7 @@ export async function fetchWorkspaceAuditLogs(
   }
   const query = params.toString();
   const response = await apiFetch(
-    `/workspaces/${workspaceId}/audit-logs${query ? `?${query}` : ''}`,
+    `/v1/workspaces/${workspaceId}/audit-logs${query ? `?${query}` : ''}`,
     { method: 'GET' },
   );
   if (!response.ok) {
@@ -90,7 +90,7 @@ export async function fetchWorkspaceAuditLogs(
 }
 
 export async function listWorkspaces(): Promise<WorkspaceListItem[]> {
-  const response = await apiFetch('/workspaces', { method: 'GET' });
+  const response = await apiFetch('/v1/workspaces', { method: 'GET' });
   if (!response.ok) {
     throw new Error('Failed to load workspaces');
   }
@@ -98,7 +98,7 @@ export async function listWorkspaces(): Promise<WorkspaceListItem[]> {
 }
 
 export async function createWorkspace(payload: Partial<WorkspaceResponse> = {}): Promise<WorkspaceBundle> {
-  const response = await apiFetch('/workspace', {
+  const response = await apiFetch('/v1/workspace', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
