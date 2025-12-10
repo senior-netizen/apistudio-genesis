@@ -1,10 +1,25 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
-ENV NODE_ENV=production
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY .yarn/releases/yarn-4.10.3.cjs ./.yarn/releases/yarn-4.10.3.cjs
 COPY . .
-RUN if [ ! -d node_modules ]; then \
-    if [ -f package-lock.json ]; then npm ci --workspaces=false --omit=dev --no-fund --no-audit; \
-    else npm install --workspaces=false --omit=dev --no-fund --no-audit; fi; \
-    fi
+RUN corepack enable \
+    && if [ -f yarn.lock ]; then \
+        corepack prepare "$(node -p 'require("./package.json").packageManager || "yarn@4.10.3"')" --activate && \
+        yarn install --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then npm ci; \
+    elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --frozen-lockfile; \
+    else npm install; fi
+WORKDIR /usr/src/app/squirrel/microservices/billing-service
+RUN npm run build || yarn build
+
+FROM node:20-alpine AS runner
+WORKDIR /usr/src/app/squirrel/microservices/billing-service
+ENV NODE_ENV=production
+COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
+COPY --from=builder /usr/src/app/squirrel/microservices/billing-service/package.json ./package.json
+COPY --from=builder /usr/src/app/squirrel/microservices/billing-service/dist ./dist
 EXPOSE 3006
 CMD ["node", "dist/main.js"]
