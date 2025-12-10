@@ -3,6 +3,7 @@ export const QUEUES = {
   SEARCH_INDEX: 'search.index',
   ANALYTICS_ROLLUP: 'analytics.rollup',
   WEBHOOK_DELIVER: 'webhook.deliver',
+  MONITOR_EXECUTE: 'monitor.execute',
   RUN_EXECUTE: 'run.execute',
 } as const;
 

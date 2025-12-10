@@ -196,10 +196,7 @@ export class RequestsService {
       // Make GraphQL introspection request
       const response = await fetch(request.url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(typeof request.headers === 'object' ? request.headers : {}),
-        },
+        headers: this.normalizeHeaders(request.headers, { 'Content-Type': 'application/json' }),
         body: JSON.stringify({ query: introspectionQuery }),
       });
 
@@ -237,6 +234,26 @@ export class RequestsService {
       return undefined;
     }
     return value;
+  }
+
+  private normalizeHeaders(headers: unknown, defaults: Record<string, string> = {}) {
+    const normalized: Record<string, string> = { ...defaults };
+    if (headers && typeof headers === 'object') {
+      if (Array.isArray(headers)) {
+        headers.forEach((entry: any) => {
+          if (entry?.key && entry?.value) {
+            normalized[String(entry.key)] = String(entry.value);
+          }
+        });
+      } else {
+        Object.entries(headers as Record<string, unknown>).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            normalized[key] = value;
+          }
+        });
+      }
+    }
+    return normalized;
   }
 
   private mapUpdateDto(dto: UpdateRequestDto): any {

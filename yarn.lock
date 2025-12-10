@@ -1498,6 +1498,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nestjs/bull-shared@npm:^10.2.3":
+  version: 10.2.3
+  resolution: "@nestjs/bull-shared@npm:10.2.3"
+  dependencies:
+    tslib: "npm:2.8.1"
+  peerDependencies:
+    "@nestjs/common": ^8.0.0 || ^9.0.0 || ^10.0.0
+    "@nestjs/core": ^8.0.0 || ^9.0.0 || ^10.0.0
+  checksum: 10c0/13096bb534d2dc3bbffb155127a60be14835bd9c919ba608c9f73f0f404c5b87123d016cc6f4872d6e8f5a8513eed04f3d6db3f20d5be554e415cd2f6b902e59
+  languageName: node
+  linkType: hard
+
+"@nestjs/bull@npm:^10.2.1":
+  version: 10.2.3
+  resolution: "@nestjs/bull@npm:10.2.3"
+  dependencies:
+    "@nestjs/bull-shared": "npm:^10.2.3"
+    tslib: "npm:2.8.1"
+  peerDependencies:
+    "@nestjs/common": ^8.0.0 || ^9.0.0 || ^10.0.0
+    "@nestjs/core": ^8.0.0 || ^9.0.0 || ^10.0.0
+    bull: ^3.3 || ^4.0.0
+  checksum: 10c0/b3ea447e618c24a1df0a19b1b2f3b507a2102b9703f63ce253af796da0c1d0bbad4218015b223f7414730955321e4e5e3c5136500d70a99ef3b4bb49d107d031
+  languageName: node
+  linkType: hard
+
 "@nestjs/cli@npm:^10.0.0, @nestjs/cli@npm:^10.3.2":
   version: 10.4.9
   resolution: "@nestjs/cli@npm:10.4.9"
@@ -1708,6 +1734,19 @@ __metadata:
     "@nestjs/websockets": ^10.0.0
     rxjs: ^7.1.0
   checksum: 10c0/cc5a488c3a3d9ea7c98d2cde54ccc18f63139aa7e9ad3f99e6cbf73500cd14d7bb2ba86a1e59c6248101fc01c97f886ce7f6bc0cc169ce021b83b26cc9d0b007
+  languageName: node
+  linkType: hard
+
+"@nestjs/schedule@npm:^4.0.1":
+  version: 4.1.2
+  resolution: "@nestjs/schedule@npm:4.1.2"
+  dependencies:
+    cron: "npm:3.2.1"
+    uuid: "npm:11.0.3"
+  peerDependencies:
+    "@nestjs/common": ^8.0.0 || ^9.0.0 || ^10.0.0
+    "@nestjs/core": ^8.0.0 || ^9.0.0 || ^10.0.0
+  checksum: 10c0/90124e454fb4d170eb806c2afea67a2f4466d2e9b01b8c5516f4d8bd0592fc949f53263e3441a3c494cf624d3f4aa233d798964e0e2f580b9347d5ec81d49b53
   languageName: node
   linkType: hard
 
@@ -3469,6 +3508,7 @@ __metadata:
     "@bull-board/express": "npm:^5.15.1"
     "@bull-board/ui": "npm:^5.23.0"
     "@nestjs/axios": "npm:^3.0.0"
+    "@nestjs/bull": "npm:^10.2.1"
     "@nestjs/cli": "npm:^10.3.2"
     "@nestjs/common": "npm:^10.3.0"
     "@nestjs/config": "npm:^3.1.1"
@@ -3478,6 +3518,7 @@ __metadata:
     "@nestjs/passport": "npm:^10.0.2"
     "@nestjs/platform-express": "npm:^10.3.0"
     "@nestjs/platform-socket.io": "npm:^10.3.0"
+    "@nestjs/schedule": "npm:^4.0.1"
     "@nestjs/schematics": "npm:^10.0.1"
     "@nestjs/serve-static": "npm:^3.0.1"
     "@nestjs/swagger": "npm:^7.2.0"
@@ -4479,6 +4520,13 @@ __metadata:
     "@types/ms": "npm:*"
     "@types/node": "npm:*"
   checksum: 10c0/0688ac8fb75f809201cb7e18a12b9d80ce539cb9dd27e1b01e11807cb1a337059e899b8ee3abc3f2c9417f02e363a3069d9eab9ef9724b1da1f0e10713514f94
+  languageName: node
+  linkType: hard
+
+"@types/luxon@npm:~3.4.0":
+  version: 3.4.2
+  resolution: "@types/luxon@npm:3.4.2"
+  checksum: 10c0/d835467de3daf7e17ba78b50bb5a14efd94272439ca067990d71332a54b311544459c69623eddd243b511b28d70194c9591a9ee8cf9c038962c965f991affd7e
   languageName: node
   linkType: hard
 
@@ -6833,6 +6881,16 @@ __metadata:
   dependencies:
     luxon: "npm:^3.2.1"
   checksum: 10c0/348622bdcd1a15695b61fc33af8a60133e5913a85cf99f6344367579e7002896514ba3b0a9d6bb569b02667d6b06836722bf2295fcd101b3de378f71d37bed0b
+  languageName: node
+  linkType: hard
+
+"cron@npm:3.2.1":
+  version: 3.2.1
+  resolution: "cron@npm:3.2.1"
+  dependencies:
+    "@types/luxon": "npm:~3.4.0"
+    luxon: "npm:~3.5.0"
+  checksum: 10c0/26e2ea54c4e15abbc70d391b6366b7e9c72281637cdf0c077726b03a65901c013b2817854ef942f02c452b40b6d482f879d0eeb2a8f7b0c6cc53694e740bf1fa
   languageName: node
   linkType: hard
 
@@ -11137,6 +11195,13 @@ __metadata:
   version: 3.7.2
   resolution: "luxon@npm:3.7.2"
   checksum: 10c0/ed8f0f637826c08c343a29dd478b00628be93bba6f068417b1d8896b61cb61c6deacbe1df1e057dbd9298334044afa150f9aaabbeb3181418ac8520acfdc2ae2
+  languageName: node
+  linkType: hard
+
+"luxon@npm:~3.5.0":
+  version: 3.5.0
+  resolution: "luxon@npm:3.5.0"
+  checksum: 10c0/335789bba95077db831ef99894edadeb23023b3eb2137a1b56acd0d290082b691cf793143d69e30bc069ec95f0b49f36419f48e951c68014f19ffe12045e3494
   languageName: node
   linkType: hard
 
@@ -15885,6 +15950,15 @@ __metadata:
   version: 1.0.1
   resolution: "utils-merge@npm:1.0.1"
   checksum: 10c0/02ba649de1b7ca8854bfe20a82f1dfbdda3fb57a22ab4a8972a63a34553cf7aa51bc9081cf7e001b035b88186d23689d69e71b510e610a09a4c66f68aa95b672
+  languageName: node
+  linkType: hard
+
+"uuid@npm:11.0.3":
+  version: 11.0.3
+  resolution: "uuid@npm:11.0.3"
+  bin:
+    uuid: dist/esm/bin/uuid
+  checksum: 10c0/cee762fc76d949a2ff9205770334699e0043d52bb766472593a25f150077c9deed821230251ea3d6ab3943a5ea137d2826678797f1d5f6754c7ce5ce27e9f7a6
   languageName: node
   linkType: hard
 

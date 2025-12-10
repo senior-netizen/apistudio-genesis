@@ -1,19 +1,28 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { QueueService } from '../../infra/queue/queue.service';
 import { QUEUES } from '../../infra/queue/queue.constants';
 
 @Injectable()
-export class MonitorSchedulerService {
+export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(MonitorSchedulerService.name);
+    private intervalId: NodeJS.Timeout | null = null;
 
     constructor(
         private readonly prisma: PrismaService,
         private readonly queues: QueueService,
     ) { }
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    onModuleInit() {
+        this.intervalId = setInterval(() => void this.checkScheduledMonitors(), 60_000);
+    }
+
+    onModuleDestroy() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+        }
+    }
+
     async checkScheduledMonitors() {
         this.logger.debug('Checking for scheduled monitors...');
 

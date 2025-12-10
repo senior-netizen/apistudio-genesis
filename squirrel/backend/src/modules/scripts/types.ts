@@ -9,7 +9,7 @@ export interface PM {
     request: RequestData;
     response?: ResponseData;
     test: (name: string, fn: () => void) => void;
-    expect: (value: any) => Chai.Assertion;
+    expect: (value: any) => any;
 }
 
 export interface EnvironmentAPI {

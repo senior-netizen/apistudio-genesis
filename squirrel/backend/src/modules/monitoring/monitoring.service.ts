@@ -69,7 +69,7 @@ export class MonitoringService {
 
         // Calculate uptime for each monitor
         const monitorsWithStats = await Promise.all(
-            monitors.map(async (monitor) => {
+            monitors.map(async (monitor: any) => {
                 const stats = await this.calculateUptime(monitor.id);
                 return {
                     ...monitor,
@@ -208,10 +208,10 @@ export class MonitoringService {
             };
         }
 
-        const successfulRuns = runs.filter((r) => r.status === 'success').length;
+        const successfulRuns = runs.filter((r: any) => r.status === 'success').length;
         const uptime = (successfulRuns / runs.length) * 100;
         const avgResponseTime =
-            runs.reduce((sum, r) => sum + r.responseTime, 0) / runs.length;
+            runs.reduce((sum: number, r: any) => sum + r.responseTime, 0) / runs.length;
 
         return {
             uptime: Math.round(uptime * 100) / 100,

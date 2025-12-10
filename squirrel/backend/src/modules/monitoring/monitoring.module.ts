@@ -4,11 +4,10 @@ import { MonitoringService } from './monitoring.service';
 import { MonitorSchedulerService } from './monitor-scheduler.service';
 import { MonitorExecutorService } from './monitor-executor.service';
 import { AlertService } from './alert.service';
-import { PrismaModule } from '../../infra/prisma/prisma.module';
-import { QueueModule } from '../../infra/queue/queue.module';
+import { InfraModule } from '../../infra/infra.module';
 
 @Module({
-    imports: [PrismaModule, QueueModule],
+    imports: [InfraModule],
     controllers: [MonitoringController],
     providers: [
         MonitoringService,

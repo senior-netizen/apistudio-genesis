@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Process, Processor } from '@nestjs/bull';
-import { Job } from 'bull';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { AlertService } from './alert.service';
 import { QUEUES } from '../../infra/queue/queue.constants';
@@ -11,7 +9,6 @@ interface MonitorExecutionJob {
     region: string;
 }
 
-@Processor(QUEUES.MONITOR_EXECUTE)
 @Injectable()
 export class MonitorExecutorService {
     private readonly logger = new Logger(MonitorExecutorService.name);
@@ -21,9 +18,8 @@ export class MonitorExecutorService {
         private readonly alerts: AlertService,
     ) { }
 
-    @Process('execute')
-    async executeMonitor(job: Job<MonitorExecutionJob>) {
-        const { monitorId, requestId, region } = job.data;
+    async executeMonitor(job: MonitorExecutionJob) {
+        const { monitorId, requestId, region } = job;
         const startTime = Date.now();
 
         this.logger.log(`Executing monitor ${monitorId} in region ${region}`);
