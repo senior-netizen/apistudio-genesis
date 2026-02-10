@@ -24,6 +24,10 @@ sync conflict resolution, and managed hosting.
   mismatches > 1%.
 - Ship downloadable VAT-compliant invoices by extending the existing `AuditReport` export job.
 
+> **Implementation (Step 1A):** `BillingSettlementService` now runs a nightly reconciliation pass over recent `CreditsTransaction`
+> entries, polls Paynow transaction status, computes mismatch ratios, and triggers webhook/log alerts through
+> `BillingSettlementAlertService` when drift exceeds the configured threshold.
+
 ### Compliance guardrails
 - Tag Paynow transaction metadata with `workspaceId` and `orgId` so audit trails tie back to governance events.
 - Add SOC2-ready logging by mirroring billing events into the `AuditReport` table and retaining for 400 days.

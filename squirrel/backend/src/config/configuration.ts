@@ -46,6 +46,11 @@ type BillingConfig = {
   marketplaceSuccessUrl: string;
   marketplaceCancelUrl: string;
   ledgerCurrency: string;
+  settlementEnabled: boolean;
+  settlementLookbackHours: number;
+  settlementMismatchThreshold: number;
+  settlementMaxTransactions: number;
+  settlementAlertWebhookUrl?: string;
 };
 
 type SyncConfig = {
@@ -152,6 +157,11 @@ export default registerAs('app', (): AppConfig => {
       marketplaceSuccessUrl: env.MARKETPLACE_SUCCESS_URL,
       marketplaceCancelUrl: env.MARKETPLACE_CANCEL_URL,
       ledgerCurrency: env.BILLING_LEDGER_CURRENCY,
+      settlementEnabled: env.BILLING_SETTLEMENT_ENABLED,
+      settlementLookbackHours: env.BILLING_SETTLEMENT_LOOKBACK_HOURS,
+      settlementMismatchThreshold: env.BILLING_SETTLEMENT_MISMATCH_THRESHOLD,
+      settlementMaxTransactions: env.BILLING_SETTLEMENT_MAX_TRANSACTIONS,
+      settlementAlertWebhookUrl: env.BILLING_SETTLEMENT_ALERT_WEBHOOK_URL,
     },
     owner: {
       email: env.OWNER_EMAIL,
