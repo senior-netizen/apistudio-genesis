@@ -75,6 +75,10 @@ sync conflict resolution, and managed hosting.
 - Add per-tenant rate limits to the gateway (aligning with Postman/Insomnia cloud throttles) and expose them via `/metrics`.
 - Document escalation paths for noisy neighbors, including temporary throttles and auto-scaling policies.
 
+> **Implementation (Step 2A):** Gateway middleware now validates `orgId` + `workspaceId` tenant claims on protected
+> routes, enforces request/claim consistency, and stamps canonical tenant headers for downstream services. Global throttling now
+> keys by tenant (`orgId` + `workspaceId`) via `TenantThrottlerGuard`.
+
 ## 4. Delivery Cadence & Ownership
 
 | Track | Milestone | Owner(s) | Target | Notes |
