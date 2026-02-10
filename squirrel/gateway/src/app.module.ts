@@ -1,12 +1,14 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
+import { TenantThrottlerGuard } from './common/guards/tenant-throttler.guard';
 import { OrgRolesGuard } from './common/guards/org-roles.guard';
 import { OrganizationContextResolver } from './common/resolvers/organization-context.resolver';
 import { JwtAuthMiddleware } from './common/middleware/jwt-auth.middleware';
+import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { InternalKeyMiddleware } from './common/middleware/internal-key.middleware';
 import { RedisModule } from './config/redis.module';
 import { RoutingModule } from './modules/routing/routing.module';
@@ -37,7 +39,7 @@ import { CsrfModule } from './modules/csrf/csrf.module';
     HealthService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: TenantThrottlerGuard,
     },
     {
       provide: APP_GUARD,
@@ -53,7 +55,7 @@ import { CsrfModule } from './modules/csrf/csrf.module';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(JwtAuthMiddleware, InternalKeyMiddleware)
+      .apply(JwtAuthMiddleware, TenantContextMiddleware, InternalKeyMiddleware)
       .exclude(
         'health',
         'docs',

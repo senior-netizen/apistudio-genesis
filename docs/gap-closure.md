@@ -24,6 +24,10 @@ sync conflict resolution, and managed hosting.
   mismatches > 1%.
 - Ship downloadable VAT-compliant invoices by extending the existing `AuditReport` export job.
 
+> **Implementation (Step 1A):** `BillingSettlementService` now runs a nightly reconciliation pass over recent `CreditsTransaction`
+> entries, polls Paynow transaction status, computes mismatch ratios, and triggers webhook/log alerts through
+> `BillingSettlementAlertService` when drift exceeds the configured threshold.
+
 ### Compliance guardrails
 - Tag Paynow transaction metadata with `workspaceId` and `orgId` so audit trails tie back to governance events.
 - Add SOC2-ready logging by mirroring billing events into the `AuditReport` table and retaining for 400 days.
@@ -70,6 +74,10 @@ sync conflict resolution, and managed hosting.
   services.
 - Add per-tenant rate limits to the gateway (aligning with Postman/Insomnia cloud throttles) and expose them via `/metrics`.
 - Document escalation paths for noisy neighbors, including temporary throttles and auto-scaling policies.
+
+> **Implementation (Step 2A):** Gateway middleware now validates `orgId` + `workspaceId` tenant claims on protected
+> routes, enforces request/claim consistency, and stamps canonical tenant headers for downstream services. Global throttling now
+> keys by tenant (`orgId` + `workspaceId`) via `TenantThrottlerGuard`.
 
 ## 4. Delivery Cadence & Ownership
 
