@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { documentationApi } from "../lib/api/documentation";
-import { useAuthGate } from "../modules/auth/useAuthGate";
 
 export interface SmartDocsProps {
   collectionId?: string;
@@ -57,7 +56,6 @@ export function SmartDocs({
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const requireAuth = useAuthGate();
 
   const canGenerate = useMemo(
     () => Boolean(collectionId?.trim()),
@@ -65,9 +63,6 @@ export function SmartDocs({
   );
 
   const handleGenerate = async () => {
-    if (!requireAuth({ protectedFeature: "smartdocs.generate" })) {
-      return;
-    }
     onGenerate?.();
     if (!collectionId) {
       setError("Collection ID is required to generate documentation.");
