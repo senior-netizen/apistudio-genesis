@@ -6,6 +6,7 @@
   "main": "src/index.ts",
   "dependencies": {
     "@sdl/sync-core": "workspace:*",
-    "@squirrel/observability": "workspace:*"
+    "@squirrel/observability": "workspace:*",
+    "ioredis": "^5.4.1"
   }
 }

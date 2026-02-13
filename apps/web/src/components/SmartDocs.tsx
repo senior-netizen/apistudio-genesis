@@ -1,28 +1,119 @@
-import { useState } from 'react';
+import { useMemo, useState } from "react";
+import { documentationApi } from "../lib/api/documentation";
+import { useAuthGate } from "../modules/auth/useAuthGate";
 
 export interface SmartDocsProps {
+  collectionId?: string;
+  title?: string;
+  description?: string;
+  version?: string;
   onGenerate?: () => void;
 }
 
-/**
- * SmartDocs renders a button to trigger documentation generation and displays
- * a placeholder preview of the AI output. Wiring the real backend response is
- * as simple as replacing the state management with data fetching hooks.
- */
-export function SmartDocs({ onGenerate }: SmartDocsProps) {
-  const [content, setContent] = useState<string>('');
+function buildMarkdownPreview(spec: any): string {
+  if (!spec || typeof spec !== "object") {
+    return "No documentation preview available.";
+  }
 
-  const handleGenerate = () => {
+  const info = spec.info ?? {};
+  const paths = spec.paths ?? {};
+  const routeLines: string[] = [];
+
+  Object.entries(paths)
+    .slice(0, 15)
+    .forEach(([path, methods]) => {
+      if (!methods || typeof methods !== "object") {
+        return;
+      }
+      Object.keys(methods).forEach((method) => {
+        routeLines.push(`- ${String(method).toUpperCase()} ${path}`);
+      });
+    });
+
+  const endpointSection =
+    routeLines.length > 0
+      ? routeLines.join("\n")
+      : "- No endpoints found in generated spec.";
+
+  return [
+    `# ${info.title ?? "API Documentation"}`,
+    "",
+    info.description ?? "Generated OpenAPI preview.",
+    "",
+    `**Version:** ${info.version ?? "1.0.0"}`,
+    "",
+    "## Endpoints",
+    endpointSection,
+  ].join("\n");
+}
+
+export function SmartDocs({
+  collectionId,
+  title,
+  description,
+  version,
+  onGenerate,
+}: SmartDocsProps) {
+  const [content, setContent] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requireAuth = useAuthGate();
+
+  const canGenerate = useMemo(
+    () => Boolean(collectionId?.trim()),
+    [collectionId],
+  );
+
+  const handleGenerate = async () => {
+    if (!requireAuth({ protectedFeature: "smartdocs.generate" })) {
+      return;
+    }
     onGenerate?.();
-    setContent('### Example Endpoint\nGET /api/example\n\nReturns the list of admin users created after 2024-01-01.');
+    if (!collectionId) {
+      setError("Collection ID is required to generate documentation.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await documentationApi.generate(collectionId, {
+        title,
+        description,
+        version,
+      });
+      setContent(buildMarkdownPreview(response?.spec));
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to generate documentation.";
+      setError(message);
+      setContent("");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <section className="smart-docs">
-      <button type="button" onClick={handleGenerate}>
-        Generate Docs
+    <section className="smart-docs space-y-3">
+      <button
+        type="button"
+        onClick={handleGenerate}
+        disabled={!canGenerate || loading}
+      >
+        {loading ? "Generating…" : "Generate Docs"}
       </button>
-      {content && <pre className="smart-docs__preview">{content}</pre>}
+      {!canGenerate && (
+        <p className="text-sm text-muted">
+          Provide a collection ID to generate SmartDocs.
+        </p>
+      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      {content && (
+        <pre className="smart-docs__preview whitespace-pre-wrap">{content}</pre>
+      )}
     </section>
   );
 }
