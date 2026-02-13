@@ -435,7 +435,7 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
-    // TODO(scales): consider table partitioning on scope_id to cap hot partitions and archive old epochs.
+    // Partitioning runbook: see ARCHITECTURE_SCALE.md "Sync partitioning plan (P1.4 follow-through)" for rollout thresholds and shape.
     const result = await this.prisma.$transaction(async (tx) => {
       const latest = await tx.syncChange.findFirst({
         orderBy: { serverEpoch: "desc" },
