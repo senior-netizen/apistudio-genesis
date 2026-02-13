@@ -440,9 +440,10 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
     return "sync:presence:events";
   }
 
-  private sessionKey(token: string) {
-    return `sync:session:${token}`;
-  }
+  async recordPresence(workspaceId: string, event: SyncPresenceEvent) {
+    const now = Date.now();
+    const nextState = await this.mergePresenceState(workspaceId, event, now);
+    const expiresAt = now + PRESENCE_TTL_MS;
 
   private async persistSession(session: SyncSession) {
     const client = await this.redis.getClient();
