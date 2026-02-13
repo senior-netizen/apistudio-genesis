@@ -1,10 +1,19 @@
-import { OnModuleDestroy } from '@nestjs/common';
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, ConnectedSocket, MessageBody } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { SyncService } from './sync.service';
-import type { SyncChangeBroadcast, SyncConflictBroadcast } from './sync.service';
-import type { SyncPresenceEvent } from '@sdl/sync-core';
-import { AppLogger } from '../infra/logger/app-logger.service';
+import { OnModuleDestroy } from "@nestjs/common";
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  ConnectedSocket,
+  MessageBody,
+} from "@nestjs/websockets";
+import { Server, Socket } from "socket.io";
+import { SyncService } from "./sync.service";
+import type {
+  SyncChangeBroadcast,
+  SyncConflictBroadcast,
+} from "./sync.service";
+import type { SyncPresenceEvent } from "@sdl/sync-core";
+import { AppLogger } from "../infra/logger/app-logger.service";
 
 interface ClientSession {
   workspaceId: string;
@@ -12,21 +21,32 @@ interface ClientSession {
   userId: string;
 }
 
-@WebSocketGateway({ namespace: '/sync/ws', cors: { origin: '*' } })
+@WebSocketGateway({ namespace: "/sync/ws", cors: { origin: "*" } })
 export class SyncGateway implements OnModuleDestroy {
   private readonly logger;
-  private readonly changeListeners = new Set<(payload: SyncChangeBroadcast) => void>();
-  private readonly conflictListeners = new Set<(payload: SyncConflictBroadcast) => void>();
+  private readonly changeListeners = new Set<
+    (payload: SyncChangeBroadcast) => void
+  >();
+  private readonly conflictListeners = new Set<
+    (payload: SyncConflictBroadcast) => void
+  >();
 
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly sync: SyncService, appLogger: AppLogger) {
+  constructor(
+    private readonly sync: SyncService,
+    appLogger: AppLogger,
+  ) {
     this.logger = appLogger.forContext(SyncGateway.name);
     const changeListener = (payload: SyncChangeBroadcast) => {
       this.server
         ?.to(this.workspaceRoom(payload.workspaceId))
-        .emit('changes.pull', { scopeType: payload.scopeType, scopeId: payload.scopeId, changes: payload.changes });
+        .emit("changes.pull", {
+          scopeType: payload.scopeType,
+          scopeId: payload.scopeId,
+          changes: payload.changes,
+        });
     };
     this.changeListeners.add(changeListener);
     this.sync.onChanges(changeListener);
@@ -34,7 +54,7 @@ export class SyncGateway implements OnModuleDestroy {
     const conflictListener = (payload: SyncConflictBroadcast) => {
       this.server
         ?.to(this.workspaceRoom(payload.workspaceId))
-        .emit('sync.conflict', {
+        .emit("sync.conflict", {
           scopeType: payload.scopeType,
           scopeId: payload.scopeId,
           deviceId: payload.deviceId,
@@ -57,20 +77,22 @@ export class SyncGateway implements OnModuleDestroy {
   }
 
   afterInit() {
-    this.logger.info('Sync websocket gateway initialized');
+    this.logger.info("Sync websocket gateway initialized");
   }
 
   async handleConnection(client: Socket) {
-    const token = String(client.handshake.query.token ?? '');
-    const workspaceId = String(client.handshake.query.workspaceId ?? '');
+    const token = String(client.handshake.query.token ?? "");
+    const workspaceId = String(client.handshake.query.workspaceId ?? "");
     if (!token || !workspaceId) {
-      this.logger.warn('Missing token or workspaceId in sync websocket handshake');
+      this.logger.warn(
+        "Missing token or workspaceId in sync websocket handshake",
+      );
       client.disconnect();
       return;
     }
     const session = await this.sync.verifySession(token);
     if (!session || session.workspaceId !== workspaceId) {
-      this.logger.warn('Invalid sync session token');
+      this.logger.warn("Invalid sync session token");
       client.disconnect();
       return;
     }
@@ -80,11 +102,13 @@ export class SyncGateway implements OnModuleDestroy {
       userId: session.userId,
     } satisfies ClientSession;
     void client.join(this.workspaceRoom(workspaceId));
-    this.logger.debug(`Sync client connected ${client.id} workspace=${workspaceId}`);
-    client.emit('hello', {
+    this.logger.debug(
+      `Sync client connected ${client.id} workspace=${workspaceId}`,
+    );
+    client.emit("hello", {
       deviceId: session.deviceId,
       workspaceId,
-      status: 'connected',
+      status: "connected",
     });
   }
 
@@ -92,17 +116,23 @@ export class SyncGateway implements OnModuleDestroy {
     this.logger.debug(`Sync client disconnected ${client.id}`);
   }
 
-  @SubscribeMessage('presence')
-  handlePresence(@ConnectedSocket() client: Socket, @MessageBody() body: SyncPresenceEvent) {
+  @SubscribeMessage("presence")
+  async handlePresence(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: SyncPresenceEvent,
+  ) {
     const session: ClientSession | undefined = client.data.session;
     if (!session) {
-      client.emit('error', { message: 'Not authenticated' });
+      client.emit("error", { message: "Not authenticated" });
       return;
     }
-    this.sync.recordPresence(session.workspaceId, { ...body, deviceId: session.deviceId });
-    this.server.to(this.workspaceRoom(session.workspaceId)).emit('presence', {
+    await this.sync.recordPresence(session.workspaceId, {
+      ...body,
+      deviceId: session.deviceId,
+    });
+    this.server.to(this.workspaceRoom(session.workspaceId)).emit("presence", {
       workspaceId: session.workspaceId,
-      states: this.sync.listPresence(session.workspaceId),
+      states: await this.sync.listPresence(session.workspaceId),
     });
   }
 
