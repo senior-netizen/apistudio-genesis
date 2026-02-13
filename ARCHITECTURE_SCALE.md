@@ -24,7 +24,7 @@
 ## Rate limiting and quotas
 
 - Pluggable hook: `@squirrel/observability` `createRateLimitMiddleware` wraps providers; backend uses Redis-backed provider in `RedisRateLimitMiddleware` (applied globally).
-- Limits are keyed by IP + tenant identifiers and expose `x-rate-limit-*` headers; TODO: extend with per-plan quotas and workspace-specific throttles.
+- Limits are keyed by IP + tenant identifiers and expose `x-rate-limit-*` headers; middleware now applies workspace-aware plan multipliers for throttling (FREE/TEAM/BUSINESS/ENTERPRISE).
 - Guards like `RateLimitGuard` remain available for route-level overrides.
 
 ## State audit & migration targets
