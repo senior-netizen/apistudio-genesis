@@ -124,6 +124,83 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private async verifySyncPullIndex() {
+    try {
+      const existing = await this.prisma.$queryRaw<
+        Array<{ indexname: string }>
+      >`
+        SELECT indexname
+        FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND tablename = 'SyncChange'
+          AND indexname = ${SYNC_PULL_INDEX}
+      `;
+      if (existing.length === 0) {
+        this.logger.warn(
+          {
+            expectedIndex: SYNC_PULL_INDEX,
+          },
+          "sync pull index is missing; apply latest migrations to avoid degraded pull performance",
+        );
+      }
+    } catch (error) {
+      this.logger.debug({ error }, "skipping sync pull index verification");
+    }
+  }
+
+  async onModuleDestroy() {
+    if (this.presenceSubscriber) {
+      await this.presenceSubscriber.quit();
+      this.presenceSubscriber = undefined;
+    }
+  }
+
+  onChanges(listener: (payload: SyncChangeBroadcast) => void) {
+    this.events.on("changes", listener);
+  }
+
+  offChanges(listener: (payload: SyncChangeBroadcast) => void) {
+    this.events.off("changes", listener);
+  }
+
+  onConflict(listener: (payload: SyncConflictBroadcast) => void) {
+    this.events.on("conflict", listener);
+  }
+
+  offConflict(listener: (payload: SyncConflictBroadcast) => void) {
+    this.events.off("conflict", listener);
+  }
+
+  onPresence(listener: (workspaceId: string, states: PresenceState[]) => void) {
+    this.events.on("presence", listener);
+  }
+
+  async recordPresence(workspaceId: string, event: SyncPresenceEvent) {
+    const now = Date.now();
+    const nextState = await this.mergePresenceState(workspaceId, event, now);
+    const expiresAt = now + PRESENCE_TTL_MS;
+
+    try {
+      const client = await this.redis.getClient();
+      const key = this.presenceKey(workspaceId);
+      await client.hset(key, nextState.deviceId, JSON.stringify(nextState));
+      await client.pexpire(key, SESSION_TTL_MS);
+      await client.zadd(
+        this.presenceIndexKey(workspaceId),
+        expiresAt,
+        nextState.deviceId,
+      );
+      await client.pexpire(this.presenceIndexKey(workspaceId), SESSION_TTL_MS);
+      await this.pruneExpiredPresence(workspaceId, now);
+      await client.publish(
+        this.presenceChannel(),
+        JSON.stringify({ workspaceId }),
+      );
+      await this.publishPresence(workspaceId);
+    } catch (error) {
+      this.logger.debug({ error }, "sync presence persistence skipped");
+  }
+
   async onModuleDestroy() {
     if (this.presenceSubscriber) {
       await this.presenceSubscriber.quit();
@@ -293,6 +370,132 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
       "PX",
       SESSION_TTL_MS,
     );
+  }
+
+  async listPresence(workspaceId: string): Promise<PresenceState[]> {
+    try {
+      const client = await this.redis.getClient();
+      const now = Date.now();
+      await this.pruneExpiredPresence(workspaceId, now);
+      const deviceIds = await client.zrangebyscore(
+        this.presenceIndexKey(workspaceId),
+        now,
+        "+inf",
+      );
+      if (deviceIds.length === 0) {
+        return [];
+      }
+      const statesRaw = await client.hmget(
+        this.presenceKey(workspaceId),
+        ...deviceIds,
+      );
+      const parsedStates: PresenceState[] = [];
+      for (const raw of statesRaw) {
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw) as PresenceState;
+          parsedStates.push(parsed);
+        } catch (error) {
+          this.logger.debug({ error }, "invalid sync presence state payload");
+        }
+      }
+      return parsedStates.sort((a, b) => a.deviceId.localeCompare(b.deviceId));
+    } catch (error) {
+      this.logger.debug({ error }, "sync presence unavailable");
+      return [];
+    }
+  }
+
+  private async publishPresence(workspaceId: string) {
+    const state = await this.listPresence(workspaceId);
+    this.events.emit("presence", workspaceId, state);
+  }
+
+  private async mergePresenceState(
+    workspaceId: string,
+    event: SyncPresenceEvent,
+    now: number,
+  ): Promise<PresenceState> {
+    const base: PresenceState = {
+      deviceId: event.deviceId,
+      lastSeenAt: now,
+      events: [event],
+    };
+
+    try {
+      const client = await this.redis.getClient();
+      const existingRaw = await client.hget(
+        this.presenceKey(workspaceId),
+        event.deviceId,
+      );
+      if (!existingRaw) {
+        return base;
+      }
+      const existing = JSON.parse(existingRaw) as PresenceState;
+      return {
+        deviceId: event.deviceId,
+        lastSeenAt: now,
+        events: [
+          ...existing.events.filter((entry) => entry.type !== event.type),
+          event,
+        ],
+      };
+    } catch (error) {
+      this.logger.debug(
+        { error },
+        "sync presence merge fell back to current event",
+      );
+      return base;
+    }
+  }
+
+  private async pruneExpiredPresence(workspaceId: string, now: number) {
+    const client = await this.redis.getClient();
+    const expiredDeviceIds = await client.zrangebyscore(
+      this.presenceIndexKey(workspaceId),
+      "-inf",
+      now - 1,
+    );
+    if (expiredDeviceIds.length === 0) {
+      return;
+    }
+    await client.zrem(this.presenceIndexKey(workspaceId), ...expiredDeviceIds);
+    await client.hdel(this.presenceKey(workspaceId), ...expiredDeviceIds);
+  }
+
+  private presenceKey(workspaceId: string) {
+    return `sync:presence:${workspaceId}`;
+  }
+
+  private presenceIndexKey(workspaceId: string) {
+    return `sync:presence:index:${workspaceId}`;
+  }
+
+  private presenceChannel() {
+    return "sync:presence:events";
+  }
+
+  private sessionKey(token: string) {
+    return `sync:session:${token}`;
+  }
+
+  private async persistSession(session: SyncSession) {
+    const client = await this.redis.getClient();
+    await client.set(
+      this.sessionKey(session.token),
+      JSON.stringify(session),
+      "PX",
+      SESSION_TTL_MS,
+    );
+  }
+
+  private async loadSession(token: string): Promise<SyncSession | null> {
+    const client = await this.redis.getClient();
+    const raw = await client.get(this.sessionKey(token));
+    if (!raw) {
+      return null;
+    }
+    return JSON.parse(raw) as SyncSession;
   }
 
   private async loadSession(token: string): Promise<SyncSession | null> {
