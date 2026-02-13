@@ -46,6 +46,7 @@ import { RoleDebugger } from "./components/RoleDebugger";
 
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import { HealthMonitor } from "./components/health/HealthMonitor";
 import { ErrorState } from "./components/system";
 
 // ---------------------- ROUTE GROUP ORDER ----------------------
