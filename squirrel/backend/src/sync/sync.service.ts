@@ -51,7 +51,6 @@ export interface SyncConflictBroadcast {
 
 const SESSION_TTL_MS = 1000 * 60 * 10; // 10 minutes
 const PRESENCE_TTL_MS = 30_000;
-const SYNC_PULL_INDEX = "SyncChange_scope_type_scope_id_server_epoch_idx";
 
 type SyncChangeRecord = {
   id: string;
@@ -99,7 +98,6 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    await this.verifySyncPullIndex();
     try {
       this.presenceSubscriber = this.redis.duplicate("sync-presence-sub");
       await this.presenceSubscriber.subscribe(this.presenceChannel());
@@ -123,30 +121,6 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
         "sync presence pub/sub disabled; redis unavailable",
       );
       this.presenceSubscriber = undefined;
-    }
-  }
-
-  private async verifySyncPullIndex() {
-    try {
-      const existing = await this.prisma.$queryRaw<
-        Array<{ indexname: string }>
-      >`
-        SELECT indexname
-        FROM pg_indexes
-        WHERE schemaname = 'public'
-          AND tablename = 'SyncChange'
-          AND indexname = ${SYNC_PULL_INDEX}
-      `;
-      if (existing.length === 0) {
-        this.logger.warn(
-          {
-            expectedIndex: SYNC_PULL_INDEX,
-          },
-          "sync pull index is missing; apply latest migrations to avoid degraded pull performance",
-        );
-      }
-    } catch (error) {
-      this.logger.debug({ error }, "skipping sync pull index verification");
     }
   }
 
@@ -388,6 +362,7 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
     this.logger.debug(
       `pull scope=${dto.scopeType}:${dto.scopeId} user=${user.id}`,
     );
+    // TODO(scales): ensure composite index on (scope_type, scope_id, server_epoch) to keep this query O(log n).
     const changes = await this.prisma.syncChange.findMany({
       where: {
         scopeType: dto.scopeType,
