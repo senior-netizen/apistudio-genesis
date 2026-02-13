@@ -105,7 +105,7 @@ function AppContent() {
   const location = useLocation();
 
   const { flags, profile, loading, error } = useBetaFlags();
-  const { user, logout: logoutUser } = useAuth();
+  const { user, isAuthenticated, logout: logoutUser } = useAuth();
 
   const { initialize, initialized, initializing } = useAppStore((state) => ({
     initialize: state.initialize,
@@ -356,20 +356,31 @@ function AppContent() {
         View Insights
       </Button>
 
-      <div className="flex items-center gap-2 border border-border/60 bg-background/80 rounded-[14px] px-3 py-1.5 shadow-soft">
-        <span className="text-xs uppercase tracking-[0.25em] text-muted">
-          Signed In
-        </span>
-        <span className="font-semibold text-sm">{userDisplayName}</span>
+      {isAuthenticated ? (
+        <div className="flex items-center gap-2 border border-border/60 bg-background/80 rounded-[14px] px-3 py-1.5 shadow-soft">
+          <span className="text-xs uppercase tracking-[0.25em] text-muted">
+            Signed In
+          </span>
+          <span className="font-semibold text-sm">{userDisplayName}</span>
+          <Button
+            size="sm"
+            variant="subtle"
+            className="h-8 rounded-full px-3"
+            onClick={handleLogout}
+          >
+            Log out
+          </Button>
+        </div>
+      ) : (
         <Button
           size="sm"
-          variant="subtle"
+          variant="primary"
           className="h-8 rounded-full px-3"
-          onClick={handleLogout}
+          onClick={() => navigate("/login")}
         >
-          Log out
+          Sign in
         </Button>
-      </div>
+      )}
     </div>
   );
 
