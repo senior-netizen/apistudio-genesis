@@ -51,6 +51,7 @@ export interface SyncConflictBroadcast {
 
 const SESSION_TTL_MS = 1000 * 60 * 10; // 10 minutes
 const PRESENCE_TTL_MS = 30_000;
+const SYNC_PULL_INDEX = "SyncChange_scope_type_scope_id_server_epoch_idx";
 
 type SyncChangeRecord = {
   id: string;
@@ -98,6 +99,7 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    await this.verifySyncPullIndex();
     try {
       this.presenceSubscriber = this.redis.duplicate("sync-presence-sub");
       await this.presenceSubscriber.subscribe(this.presenceChannel());
@@ -122,6 +124,86 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
       );
       this.presenceSubscriber = undefined;
     }
+  }
+
+  private async verifySyncPullIndex() {
+    try {
+      const existing = await this.prisma.$queryRaw<
+        Array<{ indexname: string }>
+      >`
+        SELECT indexname
+        FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND tablename = 'SyncChange'
+          AND indexname = ${SYNC_PULL_INDEX}
+      `;
+      if (existing.length === 0) {
+        this.logger.warn(
+          {
+            expectedIndex: SYNC_PULL_INDEX,
+          },
+          "sync pull index is missing; apply latest migrations to avoid degraded pull performance",
+        );
+      }
+    } catch (error) {
+      this.logger.debug({ error }, "skipping sync pull index verification");
+    }
+  }
+
+  async onModuleDestroy() {
+    if (this.presenceSubscriber) {
+      await this.presenceSubscriber.quit();
+      this.presenceSubscriber = undefined;
+    }
+  }
+
+  onChanges(listener: (payload: SyncChangeBroadcast) => void) {
+    this.events.on("changes", listener);
+  }
+
+  offChanges(listener: (payload: SyncChangeBroadcast) => void) {
+    this.events.off("changes", listener);
+  }
+
+  onConflict(listener: (payload: SyncConflictBroadcast) => void) {
+    this.events.on("conflict", listener);
+  }
+
+  offConflict(listener: (payload: SyncConflictBroadcast) => void) {
+    this.events.off("conflict", listener);
+  }
+
+  onPresence(listener: (workspaceId: string, states: PresenceState[]) => void) {
+    this.events.on("presence", listener);
+  }
+
+  async recordPresence(workspaceId: string, event: SyncPresenceEvent) {
+    const now = Date.now();
+    const nextState = await this.mergePresenceState(workspaceId, event, now);
+    const expiresAt = now + PRESENCE_TTL_MS;
+
+    try {
+      const client = await this.redis.getClient();
+      const key = this.presenceKey(workspaceId);
+      await client.hset(key, nextState.deviceId, JSON.stringify(nextState));
+      await client.pexpire(key, SESSION_TTL_MS);
+      await client.zadd(
+        this.presenceIndexKey(workspaceId),
+        expiresAt,
+        nextState.deviceId,
+      );
+      await client.pexpire(this.presenceIndexKey(workspaceId), SESSION_TTL_MS);
+      await this.pruneExpiredPresence(workspaceId, now);
+      await client.publish(
+        this.presenceChannel(),
+        JSON.stringify({ workspaceId }),
+      );
+      await this.publishPresence(workspaceId);
+    } catch (error) {
+      this.logger.debug({ error }, "sync presence persistence skipped");
+    }
+  }
+
   }
 
   private async verifySyncPullIndex() {
@@ -399,6 +481,21 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
           this.logger.debug({ error }, "invalid sync presence state payload");
         }
       }
+      }
+      const statesRaw = await client.hmget(
+        this.presenceKey(workspaceId),
+        ...deviceIds,
+      );
+      const parsedStates: PresenceState[] = [];
+      for (const raw of statesRaw) {
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw) as PresenceState;
+          parsedStates.push(parsed);
+        } catch (error) {
+          this.logger.debug({ error }, "invalid sync presence state payload");
+        }
+      }
       return parsedStates.sort((a, b) => a.deviceId.localeCompare(b.deviceId));
     } catch (error) {
       this.logger.debug({ error }, "sync presence unavailable");
@@ -447,6 +544,60 @@ export class SyncService implements OnModuleInit, OnModuleDestroy {
       );
       return base;
     }
+  }
+
+  private async pruneExpiredPresence(workspaceId: string, now: number) {
+    const client = await this.redis.getClient();
+    const expiredDeviceIds = await client.zrangebyscore(
+      this.presenceIndexKey(workspaceId),
+      "-inf",
+      now - 1,
+    );
+    if (expiredDeviceIds.length === 0) {
+      return;
+    }
+    await client.zrem(this.presenceIndexKey(workspaceId), ...expiredDeviceIds);
+    await client.hdel(this.presenceKey(workspaceId), ...expiredDeviceIds);
+  }
+
+  private presenceKey(workspaceId: string) {
+    return `sync:presence:${workspaceId}`;
+  }
+
+  private presenceIndexKey(workspaceId: string) {
+    return `sync:presence:index:${workspaceId}`;
+  }
+
+  private presenceChannel() {
+    return "sync:presence:events";
+  }
+
+  private sessionKey(token: string) {
+    return `sync:session:${token}`;
+  }
+
+  private async persistSession(session: SyncSession) {
+    const client = await this.redis.getClient();
+    await client.set(
+      this.sessionKey(session.token),
+      JSON.stringify(session),
+      "PX",
+      SESSION_TTL_MS,
+    );
+  }
+
+  private async loadSession(token: string): Promise<SyncSession | null> {
+    const client = await this.redis.getClient();
+    const raw = await client.get(this.sessionKey(token));
+    if (!raw) {
+      return null;
+    }
+    return JSON.parse(raw) as SyncSession;
+  }
+
+  private async deleteSession(token: string) {
+    const client = await this.redis.getClient();
+    await client.del(this.sessionKey(token));
   }
 
   private async pruneExpiredPresence(workspaceId: string, now: number) {
