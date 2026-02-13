@@ -4,8 +4,8 @@ import {
   Button,
   type CommandAction,
   type SidebarGroup,
-} from '@sdl/ui';
-import { useCallback, useEffect, useMemo, Suspense, useRef } from 'react';
+} from "@sdl/ui";
+import { useCallback, useEffect, useMemo, Suspense, useRef } from "react";
 import {
   matchPath,
   Navigate,
@@ -13,27 +13,24 @@ import {
   Routes,
   useLocation,
   useNavigate,
-} from 'react-router-dom';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import ContentSkeleton from './components/ContentSkeleton';
-import Loading from './components/Loading';
-import { useAppStore } from './store';
-import { useToast } from './components/ui/toast';
-import { useToastEvents } from './hooks/useToastEvents';
-import { sanitizeErrorMessage } from './utils/errorSanitizer';
+} from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import ContentSkeleton from "./components/ContentSkeleton";
+import Loading from "./components/Loading";
+import { useAppStore } from "./store";
+import { useToast } from "./components/ui/toast";
+import { useToastEvents } from "./hooks/useToastEvents";
+import { sanitizeErrorMessage } from "./utils/errorSanitizer";
 
-import { BetaBadge } from './modules/beta/BetaBadge';
-import { FeedbackWidget } from './modules/beta/FeedbackWidget';
+import { BetaBadge } from "./modules/beta/BetaBadge";
+import { FeedbackWidget } from "./modules/beta/FeedbackWidget";
 
-import LanguageRegionSelector from './components/LanguageRegionSelector';
-import { ConnectivityIndicator } from './components/ConnectivityIndicator';
+import LanguageRegionSelector from "./components/LanguageRegionSelector";
+import { ConnectivityIndicator } from "./components/ConnectivityIndicator";
 
-import {
-  BetaFlagsProvider,
-  useBetaFlags,
-} from './modules/beta/useBetaFlags';
-import { NavigationFlowProvider } from './modules/navigation/NavigationFlowContext';
-import { DevToolsManager } from './modules/devtools/DevToolsManager';
+import { BetaFlagsProvider, useBetaFlags } from "./modules/beta/useBetaFlags";
+import { NavigationFlowProvider } from "./modules/navigation/NavigationFlowContext";
+import { DevToolsManager } from "./modules/devtools/DevToolsManager";
 
 import {
   appRoutes,
@@ -41,28 +38,27 @@ import {
   notFoundRoute,
   type AppRoute,
   type RouteGroup,
-} from './routes/routeConfig';
-import { WorkspaceSyncProvider } from './modules/sync/WorkspaceSyncProvider';
-import { useAuth } from './modules/auth/AuthProvider';
-import { can, getEffectiveRole } from '@sdl/frontend/utils/roles';
-import { RoleDebugger } from './components/RoleDebugger';
+} from "./routes/routeConfig";
+import { WorkspaceSyncProvider } from "./modules/sync/WorkspaceSyncProvider";
+import { useAuth } from "./modules/auth/AuthProvider";
+import { can, getEffectiveRole } from "@sdl/frontend/utils/roles";
+import { RoleDebugger } from "./components/RoleDebugger";
 
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import { HealthMonitor } from './components/health/HealthMonitor';
-import { ErrorState } from './components/system';
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import { ErrorState } from "./components/system";
 
 // ---------------------- ROUTE GROUP ORDER ----------------------
 const groupOrder: Array<{ key: RouteGroup; heading: string }> = [
-  { key: 'Dashboard', heading: 'Dashboard' },
-  { key: 'Build', heading: 'Build' },
-  { key: 'Requests', heading: 'Requests' },
-  { key: 'AI', heading: 'AI Assistant' },
-  { key: 'Analytics', heading: 'Analytics' },
-  { key: 'Billing', heading: 'Billing' },
-  { key: 'Hub', heading: 'Hub & Plugins' },
-  { key: 'Feedback', heading: 'Feedback & Beta' },
-  { key: 'Settings', heading: 'Settings & Teams' },
+  { key: "Dashboard", heading: "Dashboard" },
+  { key: "Build", heading: "Build" },
+  { key: "Requests", heading: "Requests" },
+  { key: "AI", heading: "AI Assistant" },
+  { key: "Analytics", heading: "Analytics" },
+  { key: "Billing", heading: "Billing" },
+  { key: "Hub", heading: "Hub & Plugins" },
+  { key: "Feedback", heading: "Feedback & Beta" },
+  { key: "Settings", heading: "Settings & Teams" },
 ];
 
 function routeIsActive(route: AppRoute, activePath: string) {
@@ -75,7 +71,10 @@ function useSidebarGroups(
   currentUser: { role?: string | null; isFounder?: boolean | null } | null,
 ) {
   const accessibleRoutes = useMemo(
-    () => appRoutes.filter((route) => !route.adminOnly || can(currentUser, 'admin')),
+    () =>
+      appRoutes.filter(
+        (route) => !route.adminOnly || can(currentUser, "admin"),
+      ),
     [currentUser],
   );
 
@@ -105,7 +104,7 @@ function AppContent() {
   const location = useLocation();
 
   const { flags, profile, loading, error } = useBetaFlags();
-  const { user, logout: logoutUser } = useAuth();
+  const { user, isAuthenticated, logout: logoutUser } = useAuth();
 
   const { initialize, initialized, initializing } = useAppStore((state) => ({
     initialize: state.initialize,
@@ -123,7 +122,7 @@ function AppContent() {
       role: user?.role ?? profile?.role ?? undefined,
       isFounder:
         user?.isFounder ??
-        (user?.role === 'founder' || profile?.role === 'founder'),
+        (user?.role === "founder" || profile?.role === "founder"),
     }),
     [profile?.role, user?.isFounder, user?.role],
   );
@@ -134,15 +133,18 @@ function AppContent() {
     void logoutUser();
   }, [logoutUser]);
 
-  const defaultRoute = '/dashboard';
-  const normalized = location.pathname.replace(/\/+$/, '') || '/';
-  const activePath = normalized === '/' ? defaultRoute : normalized;
+  const defaultRoute = "/dashboard";
+  const normalized = location.pathname.replace(/\/+$/, "") || "/";
+  const activePath = normalized === "/" ? defaultRoute : normalized;
   const userDisplayName =
-    user?.name?.trim() || user?.email || 'Authenticated user';
+    user?.name?.trim() || user?.email || "Authenticated user";
 
   // ---------------- Accessible Routes -------------------
   const accessibleRoutes = useMemo(
-    () => appRoutes.filter((route) => !route.adminOnly || can(derivedUser, 'admin')),
+    () =>
+      appRoutes.filter(
+        (route) => !route.adminOnly || can(derivedUser, "admin"),
+      ),
     [derivedUser],
   );
 
@@ -178,100 +180,100 @@ function AppContent() {
 
     lastErrorRef.current = safeError;
     pushToast({
-      title: 'Unable to load beta access',
+      title: "Unable to load beta access",
       description: safeError,
-      tone: 'danger',
-      channel: 'system',
+      tone: "danger",
+      channel: "system",
     });
   }, [error, pushToast]);
 
   // ---------------- Roles -------------------------------
-  const isFounder = effectiveRole === 'founder';
-  const isAdmin = !isFounder && can(derivedUser, 'admin');
+  const isFounder = effectiveRole === "founder";
+  const isAdmin = !isFounder && can(derivedUser, "admin");
   const workspaceBadge = isFounder
-    ? 'Founder'
+    ? "Founder"
     : isAdmin
-    ? 'Admin'
-    : flags?.isBeta
-    ? 'Beta'
-    : 'Studio';
+      ? "Admin"
+      : flags?.isBeta
+        ? "Beta"
+        : "Studio";
 
   // ---------------- Shortcuts ---------------------------
   const commandActions: CommandAction[] = useMemo(
     () => [
       {
-        id: 'open-dashboard',
-        label: 'Go to dashboard',
-        shortcut: 'D',
-        section: 'Navigation',
-        onSelect: () => navigate('/dashboard'),
+        id: "open-dashboard",
+        label: "Go to dashboard",
+        shortcut: "D",
+        section: "Navigation",
+        onSelect: () => navigate("/dashboard"),
       },
       {
-        id: 'open-requests',
-        label: 'Open request catalogue',
-        shortcut: 'R',
-        section: 'Navigation',
-        onSelect: () => navigate('/requests'),
+        id: "open-requests",
+        label: "Open request catalogue",
+        shortcut: "R",
+        section: "Navigation",
+        onSelect: () => navigate("/requests"),
       },
       {
-        id: 'open-builder',
-        label: 'Open request builder',
-        shortcut: 'B',
-        section: 'Navigation',
-        onSelect: () => navigate('/builder'),
+        id: "open-builder",
+        label: "Open request builder",
+        shortcut: "B",
+        section: "Navigation",
+        onSelect: () => navigate("/builder"),
       },
       {
-        id: 'launch-ai',
-        label: 'Launch AI assistant',
-        shortcut: 'A',
-        section: 'Navigation',
-        onSelect: () => navigate('/ai'),
+        id: "launch-ai",
+        label: "Launch AI assistant",
+        shortcut: "A",
+        section: "Navigation",
+        onSelect: () => navigate("/ai"),
       },
       {
-        id: 'open-watchtower',
-        label: 'Open Watchtower',
-        section: 'Navigation',
-        onSelect: () => navigate('/watchtower'),
+        id: "open-watchtower",
+        label: "Open Watchtower",
+        section: "Navigation",
+        onSelect: () => navigate("/watchtower"),
       },
       {
-        id: 'open-forge',
-        label: 'Open Forge Designer',
-        section: 'Navigation',
-        onSelect: () => navigate('/forge'),
+        id: "open-forge",
+        label: "Open Forge Designer",
+        section: "Navigation",
+        onSelect: () => navigate("/forge"),
       },
       {
-        id: 'open-plugins',
-        label: 'Open Plugins',
-        section: 'Navigation',
-        onSelect: () => navigate('/plugins'),
+        id: "open-plugins",
+        label: "Open Plugins",
+        section: "Navigation",
+        onSelect: () => navigate("/plugins"),
       },
       {
-        id: 'open-pricing',
-        label: 'View Pricing',
-        shortcut: 'U',
-        section: 'Navigation',
-        onSelect: () => navigate('/billing/upgrade'),
+        id: "open-pricing",
+        label: "View Pricing",
+        shortcut: "U",
+        section: "Navigation",
+        onSelect: () => navigate("/billing/upgrade"),
       },
       {
-        id: 'open-cloud',
-        label: 'Open Cloud Hub',
-        shortcut: 'C',
-        section: 'Navigation',
-        onSelect: () => navigate('/cloud'),
+        id: "open-cloud",
+        label: "Open Cloud Hub",
+        shortcut: "C",
+        section: "Navigation",
+        onSelect: () => navigate("/cloud"),
       },
       {
-        id: 'open-sync',
-        label: 'Open Squirrel Sync',
-        shortcut: 'S',
-        section: 'Navigation',
-        onSelect: () => navigate('/sync'),
+        id: "open-sync",
+        label: "Open Squirrel Sync",
+        shortcut: "S",
+        section: "Navigation",
+        onSelect: () => navigate("/sync"),
       },
       {
-        id: 'open-hub',
-        label: 'Explore hub marketplace',
-        shortcut: 'H',
-        section: 'Navigation',
-        onSelect: () => navigate('/hub'),
+        id: "open-hub",
+        label: "Explore hub marketplace",
+        shortcut: "H",
+        section: "Navigation",
+        onSelect: () => navigate("/hub"),
       },
     ],
     [navigate],
@@ -281,12 +283,12 @@ function AppContent() {
   const breadcrumbs = useMemo(
     () => [
       {
-        label: 'Home',
+        label: "Home",
         href: defaultRoute,
         onSelect: () => navigate(defaultRoute),
       },
       {
-        label: activeRoute?.label ?? 'Dashboard',
+        label: activeRoute?.label ?? "Dashboard",
       },
     ],
     [activeRoute?.label, defaultRoute, navigate],
@@ -295,33 +297,31 @@ function AppContent() {
   // ---------------- TOP ACTION BAR (FIXED) ----------------------
   const topActions = (
     <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto overflow-y-hidden px-2 py-1">
-      
-
-    <div className="flex items-center gap-1 text-[13px] font-medium text-muted-foreground">
-  {breadcrumbs.map((b, i) => (
-    <span
-      key={i}
-      className={`
+      <div className="flex items-center gap-1 text-[13px] font-medium text-muted-foreground">
+        {breadcrumbs.map((b, i) => (
+          <span
+            key={i}
+            className={`
         flex items-center gap-1 cursor-pointer 
         transition-colors hover:text-foreground
       `}
-      onClick={b.onSelect}
-    >
-      {b.label}
-      {i !== breadcrumbs.length - 1 && (
-        <span className="text-muted-foreground/70">/</span>
-      )}
-    </span>
-  ))}
-</div>
+            onClick={b.onSelect}
+          >
+            {b.label}
+            {i !== breadcrumbs.length - 1 && (
+              <span className="text-muted-foreground/70">/</span>
+            )}
+          </span>
+        ))}
+      </div>
 
-<ConnectivityIndicator />
+      <ConnectivityIndicator />
       {(isFounder || isAdmin) && (
         <Badge
-          variant={isFounder ? 'success' : 'secondary'}
+          variant={isFounder ? "success" : "secondary"}
           className="rounded-[10px] px-2.5 py-1 text-[10px] uppercase tracking-[0.25em]"
         >
-          {isFounder ? 'Founder' : 'Admin'}
+          {isFounder ? "Founder" : "Admin"}
         </Badge>
       )}
 
@@ -330,9 +330,9 @@ function AppContent() {
       <LanguageRegionSelector
         onChange={(selection) =>
           pushToast({
-            title: 'Workspace locale updated',
+            title: "Workspace locale updated",
             description: `${selection.language.toUpperCase()} · ${selection.region}`,
-            tone: 'success',
+            tone: "success",
           })
         }
       />
@@ -341,7 +341,7 @@ function AppContent() {
         variant="primary"
         size="sm"
         className="h-9 px-3"
-        onClick={() => navigate('/sync')}
+        onClick={() => navigate("/sync")}
       >
         Launch Sync
       </Button>
@@ -350,25 +350,36 @@ function AppContent() {
         variant="subtle"
         size="sm"
         className="h-9 px-3"
-        onClick={() => navigate('/analytics')}
+        onClick={() => navigate("/analytics")}
       >
         View Insights
       </Button>
 
-      <div className="flex items-center gap-2 border border-border/60 bg-background/80 rounded-[14px] px-3 py-1.5 shadow-soft">
-        <span className="text-xs uppercase tracking-[0.25em] text-muted">
-          Signed In
-        </span>
-        <span className="font-semibold text-sm">{userDisplayName}</span>
+      {isAuthenticated ? (
+        <div className="flex items-center gap-2 border border-border/60 bg-background/80 rounded-[14px] px-3 py-1.5 shadow-soft">
+          <span className="text-xs uppercase tracking-[0.25em] text-muted">
+            Signed In
+          </span>
+          <span className="font-semibold text-sm">{userDisplayName}</span>
+          <Button
+            size="sm"
+            variant="subtle"
+            className="h-8 rounded-full px-3"
+            onClick={handleLogout}
+          >
+            Log out
+          </Button>
+        </div>
+      ) : (
         <Button
           size="sm"
-          variant="subtle"
+          variant="primary"
           className="h-8 rounded-full px-3"
-          onClick={handleLogout}
+          onClick={() => navigate("/login")}
         >
-          Log out
+          Sign in
         </Button>
-      </div>
+      )}
     </div>
   );
 
@@ -393,7 +404,11 @@ function AppContent() {
           topActions={topActions}
         >
           {import.meta.env.DEV && (
-            <RoleDebugger user={user ?? null} profile={profile ?? null} effectiveRole={effectiveRole} />
+            <RoleDebugger
+              user={user ?? null}
+              profile={profile ?? null}
+              effectiveRole={effectiveRole}
+            />
           )}
           {initializing || !initialized ? (
             <ContentSkeleton />
@@ -409,7 +424,10 @@ function AppContent() {
               onRetry={() => initialize()}
             >
               <Routes>
-                <Route path="/" element={<Navigate to={defaultRoute} replace />} />
+                <Route
+                  path="/"
+                  element={<Navigate to={defaultRoute} replace />}
+                />
                 {accessibleRoutes.map((route) => (
                   <Route
                     key={route.id}
@@ -464,7 +482,6 @@ function ProtectedApp() {
 // ----------------------------- ROOT ---------------------------------
 export default function App() {
   const { isAuthenticated, initializing } = useAuth();
-  const location = useLocation();
 
   if (initializing) {
     return (
@@ -479,11 +496,7 @@ export default function App() {
       <Route
         path="/login"
         element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <LoginPage />
-          )
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
         }
       />
       <Route
@@ -496,22 +509,7 @@ export default function App() {
           )
         }
       />
-      <Route
-        path="/*"
-        element={
-          isAuthenticated ? (
-            <ProtectedApp />
-          ) : (
-            <Navigate
-              to="/login"
-              replace
-              state={{
-                from: `${location.pathname}${location.search}${location.hash}`,
-              }}
-            />
-          )
-        }
-      />
+      <Route path="/*" element={<ProtectedApp />} />
     </Routes>
   );
 }
