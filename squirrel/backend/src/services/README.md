@@ -1,4 +1,13 @@
 # Services migration scaffolding
 
-This directory introduces domain-oriented modules that will be promoted to standalone services when stable.
-Future domains (workspace, requests, sync, analytics, billing) intentionally remain TODO markers to preserve the monolith while we add boundaries.
+This directory defines domain-oriented modules that form stable orchestration boundaries
+for future microservice extraction while preserving existing monolith behavior.
+
+Current boundaries:
+
+- auth
+- workspace/team
+- request/composer
+- sync/presence
+- analytics/observability
+- billing/subscriptions
