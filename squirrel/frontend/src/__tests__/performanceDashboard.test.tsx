@@ -2,6 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import PerformanceDashboard from '../components/PerformanceDashboard';
 
+const describeWithDom = typeof document === 'undefined' ? describe.skip : describe;
+
 vi.mock('../services/api', () => ({
   api: {
     get: vi.fn(),
@@ -10,7 +12,7 @@ vi.mock('../services/api', () => ({
 
 const { api } = await import('../services/api');
 
-describe('PerformanceDashboard', () => {
+describeWithDom('PerformanceDashboard', () => {
   afterEach(() => {
     (api.get as unknown as ReturnType<typeof vi.fn>).mockReset();
   });
