@@ -70,11 +70,10 @@ export class TicketsController {
     }
 
     private getAuthenticatedUserId(req: any): string {
-        const userId = req?.user?.id;
+        const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?.userId;
         if (!userId) {
             throw new UnauthorizedException('Authentication required to access ticket resources.');
         }
         return userId;
     }
 }
-
