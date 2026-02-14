@@ -55,6 +55,13 @@ export interface SyncClientOptions {
   presenceDebounceMs?: number;
 }
 
+export interface SyncConflictEvent {
+  scopeType: ScopeType;
+  scopeId: string;
+  deviceId: string;
+  divergence: number;
+}
+
 export type SyncClientEvents = {
   status: (status: SyncStatus) => void;
   error: (error: Error) => void;
@@ -62,5 +69,6 @@ export type SyncClientEvents = {
   snapshot: (payload: { scope: SyncScope; response: SyncPullResponse }) => void;
   ack: (ack: SyncAck) => void;
   presence: (event: SyncPresenceEvent) => void;
+  conflict: (event: SyncConflictEvent) => void;
   metrics: (sample: SyncMetricsSample) => void;
 };
