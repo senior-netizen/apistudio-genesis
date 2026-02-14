@@ -4,7 +4,6 @@
  */
 
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
-import { GraphQLClient } from "graphql-request";
 import * as vscode from "vscode";
 import { ApiRequestPayload, ApiResponsePayload } from "../types/api";
 
@@ -78,14 +77,21 @@ export const makeRequest = async (payload: ApiRequestPayload): Promise<ApiRespon
 export const makeGraphQLRequest = async (
   payload: { url: string; query: string; variables?: string; headers?: Record<string, string> }
 ): Promise<ApiResponsePayload> => {
-  const client = new GraphQLClient(payload.url, {
-    headers: sanitizeHeaders(payload.headers),
-    timeout: requestTimeout,
-  });
   const startedAt = Date.now();
   try {
     const variables = payload.variables ? JSON.parse(payload.variables) : undefined;
-    const response = await client.rawRequest(payload.query, variables);
+    const response = await axios.post(
+      payload.url,
+      { query: payload.query, variables },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(sanitizeHeaders(payload.headers) ?? {}),
+        },
+        timeout: requestTimeout,
+        validateStatus: () => true,
+      }
+    );
     const duration = Date.now() - startedAt;
     return {
       status: response.status,

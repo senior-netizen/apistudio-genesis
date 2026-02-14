@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { randomUUID } from "crypto";
-import WebSocket from "ws";
+import WebSocket, { RawData } from "ws";
 import { Script, createContext } from "vm";
 import {
   ApiRequestPayload,
@@ -418,7 +418,7 @@ export class ApiPanel {
           payload: { sessionId, direction: "in", message: "[connected]" },
         });
       });
-      ws.on("message", (data) => {
+      ws.on("message", (data: RawData) => {
         try {
           void this.postMessage({
             type: "websocketMessage",
@@ -428,7 +428,7 @@ export class ApiPanel {
           console.error("[ApiPanel] Failed to process websocket message", error);
         }
       });
-      ws.on("error", (error) => {
+      ws.on("error", (error: Error) => {
         void this.postMessage({
           type: "websocketMessage",
           payload: { sessionId, direction: "in", message: `[error] ${error instanceof Error ? error.message : error}` },

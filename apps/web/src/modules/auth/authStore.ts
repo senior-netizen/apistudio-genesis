@@ -9,6 +9,7 @@ export interface AuthUser {
   email: string;
   name?: string | null;
   role?: string | null;
+  isFounder?: boolean | null;
 }
 
 interface AuthTokensResponse {
