@@ -41,8 +41,7 @@ import {
   saveAuthCredentials,
 } from "../services/authManager";
 import { runAiCommand } from "../ai/squirrelAI";
-// Cloud sync hooks (opt-in once the Squirrel Cloud endpoints are live):
-// import { syncProjectsToCloud, uploadAnalyticsSnapshot } from "../services/cloudSync";
+import { syncProjectsToCloud, uploadAnalyticsSnapshot } from "../services/cloudSync";
 
 interface TelemetryClient {
   track(eventName: string, properties?: Record<string, string | number | boolean | undefined>): void;
@@ -217,8 +216,7 @@ export class ApiPanel {
       case "saveProjects": {
         const projects = await saveProjects(message.payload);
         await this.postMessage({ type: "projectsUpdated", payload: projects });
-        // Uncomment to sync collections to Squirrel Cloud when the workspace API is available.
-        // void syncProjectsToCloud(projects);
+        void syncProjectsToCloud(projects);
         break;
       }
       case "generateDocs": {
@@ -261,8 +259,7 @@ export class ApiPanel {
     try {
       const response = await makeRequest(authApplied);
       const { history, analytics } = await logRequest(authApplied, response);
-      // Uncomment to push analytics snapshots to Squirrel Cloud when endpoints are available.
-      // void uploadAnalyticsSnapshot(analytics);
+      void uploadAnalyticsSnapshot(analytics);
       ApiPanel.telemetry.track("requestSuccess", {
         method: authApplied.method,
         status: response.status,
@@ -282,8 +279,7 @@ export class ApiPanel {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       const { history, analytics } = await logRequest(authApplied, undefined, message);
-      // Uncomment to push analytics snapshots to Squirrel Cloud when endpoints are available.
-      // void uploadAnalyticsSnapshot(analytics);
+      void uploadAnalyticsSnapshot(analytics);
       ApiPanel.telemetry.track("requestFailure", {
         method: authApplied.method,
         error: message,
@@ -318,8 +314,7 @@ export class ApiPanel {
       };
       const response = await makeGraphQLRequest(payload);
       const { history, analytics } = await logRequest(requestPayload, response);
-      // Uncomment to push analytics snapshots to Squirrel Cloud when endpoints are available.
-      // void uploadAnalyticsSnapshot(analytics);
+      void uploadAnalyticsSnapshot(analytics);
       ApiPanel.telemetry.track("graphqlSuccess", { url: payload.url });
       await this.postMessage({
         type: "showResponse",
@@ -340,8 +335,7 @@ export class ApiPanel {
         name: "GraphQL Request",
       };
       const { history, analytics } = await logRequest(requestPayload, undefined, message);
-      // Uncomment to push analytics snapshots to Squirrel Cloud when endpoints are available.
-      // void uploadAnalyticsSnapshot(analytics);
+      void uploadAnalyticsSnapshot(analytics);
       ApiPanel.telemetry.track("graphqlFailure", { url: payload.url, error: message });
       await this.postMessage({
         type: "showResponse",
