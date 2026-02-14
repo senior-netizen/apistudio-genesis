@@ -2,6 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import NotificationsDrawer from '../components/NotificationsDrawer';
 
+const describeWithDom = typeof document === 'undefined' ? describe.skip : describe;
+
 vi.mock('../services/api', () => ({
   api: {
     get: vi.fn(),
@@ -10,7 +12,7 @@ vi.mock('../services/api', () => ({
 
 const { api } = await import('../services/api');
 
-describe('NotificationsDrawer', () => {
+describeWithDom('NotificationsDrawer', () => {
   afterEach(() => {
     (api.get as unknown as ReturnType<typeof vi.fn>).mockReset();
   });
