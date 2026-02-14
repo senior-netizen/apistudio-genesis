@@ -20,6 +20,7 @@ export const useAppStore = create<AppState>(
       initialized: false,
       initializing: false,
       initializationError: null,
+      globalVariables: [],
       async initialize() {
         if (get().initializing || get().initialized) return;
         set((state) => {

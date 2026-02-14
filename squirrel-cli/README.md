@@ -128,6 +128,45 @@ Founders and workspace owners can now run governance workflows without leaving t
 
 All commands respect the currently selected workspace (via `squirrel workspace use <id>`), or you can pass `--workspace <id>` to operate on another tenant. This fills one of the CLI roadmap gaps around team governance, enabling end-to-end account management from automation scripts or terminals.
 
+
+## JSON output contract (`--json`)
+
+Automation-oriented commands expose a versioned JSON envelope so scripts can parse output safely across releases.
+
+### Envelope
+
+```json
+{
+  "schemaVersion": "2026-02-14",
+  "ok": true,
+  "data": {}
+}
+```
+
+On failures, commands return a structured error envelope and set a non-zero process exit code:
+
+```json
+{
+  "schemaVersion": "2026-02-14",
+  "ok": false,
+  "error": {
+    "code": "workspace_required",
+    "message": "No workspace specified.",
+    "details": "optional diagnostic details"
+  }
+}
+```
+
+### Examples
+
+```bash
+# Success shape
+squirrel workspace list --json
+
+# Error shape + exit code 1 when workspace is not resolved
+squirrel team remove member_123 --json
+```
+
 ## Extensibility
 
 The CLI is organized by feature domain (`src/commands`, `src/api`, `src/utils`) making it straightforward to extend. Future roadmap ideas include:

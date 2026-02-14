@@ -1,6 +1,5 @@
 /**
- * @squirrel/vscode - Optional cloud synchronization utilities.
- * These helpers target future Squirrel Cloud endpoints for projects and analytics.
+ * @squirrel/vscode - Cloud synchronization utilities.
  */
 
 import axios from "axios";
@@ -12,9 +11,14 @@ interface CloudSyncConfig {
   endpoint?: string;
   token?: string;
   workspaceId?: string;
+  timeoutMs: number;
+  retries: number;
 }
 
 const configurationNamespace = "@squirrel.vscode";
+const output = vscode.window.createOutputChannel("Squirrel Cloud Sync");
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const getCloudConfig = (): CloudSyncConfig => {
   const config = vscode.workspace.getConfiguration(configurationNamespace);
@@ -23,34 +27,50 @@ const getCloudConfig = (): CloudSyncConfig => {
     endpoint: config.get<string>("cloudSync.endpoint"),
     token: config.get<string>("cloudSync.token"),
     workspaceId: config.get<string>("cloudSync.workspaceId"),
+    timeoutMs: config.get<number>("cloudSync.timeoutMs", 8000),
+    retries: config.get<number>("cloudSync.retries", 2),
   };
+};
+
+const getConfigValidationError = (config: CloudSyncConfig): string | null => {
+  if (!config.enabled) return "cloud sync disabled";
+  if (!config.endpoint) return "cloudSync.endpoint missing";
+  if (!config.token) return "cloudSync.token missing";
+  return null;
 };
 
 const postToCloud = async (route: string, payload: unknown): Promise<boolean> => {
   const config = getCloudConfig();
-  if (!config.enabled || !config.endpoint || !config.token) {
+  const validationError = getConfigValidationError(config);
+  if (validationError) {
+    output.appendLine(`[cloud-sync] Skip ${route}: ${validationError}.`);
     return false;
   }
 
-  const url = `${config.endpoint.replace(/\/$/, "")}${route}`;
+  const url = `${config.endpoint!.replace(/\/$/, "")}${route}`;
 
-  try {
-    await axios.post(url, payload, {
-      headers: {
-        Authorization: `Bearer ${config.token}`,
-        "Content-Type": "application/json",
-        ...(config.workspaceId ? { "X-Workspace": config.workspaceId } : {}),
-      },
-      timeout: 8000,
-    });
-    return true;
-  } catch (error) {
-    const output = vscode.window.createOutputChannel("Squirrel Cloud Sync");
-    const message = error instanceof Error ? error.message : String(error);
-    output.appendLine(`[cloud-sync] Failed to post to ${url}: ${message}`);
-    output.dispose();
-    return false;
+  for (let attempt = 0; attempt <= config.retries; attempt += 1) {
+    try {
+      await axios.post(url, payload, {
+        headers: {
+          Authorization: `Bearer ${config.token}`,
+          "Content-Type": "application/json",
+          ...(config.workspaceId ? { "X-Workspace": config.workspaceId } : {}),
+        },
+        timeout: config.timeoutMs,
+      });
+      output.appendLine(`[cloud-sync] Synced ${route} (attempt ${attempt + 1}/${config.retries + 1}).`);
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      output.appendLine(`[cloud-sync] Failed ${route} (attempt ${attempt + 1}/${config.retries + 1}): ${message}`);
+      if (attempt < config.retries) {
+        await delay(Math.min(5000, 300 * 2 ** attempt));
+      }
+    }
   }
+
+  return false;
 };
 
 export const syncProjectsToCloud = async (projects: ApiProject[]): Promise<boolean> =>
@@ -59,4 +79,3 @@ export const syncProjectsToCloud = async (projects: ApiProject[]): Promise<boole
 export const uploadAnalyticsSnapshot = async (
   analytics: HistoryAnalyticsSnapshot
 ): Promise<boolean> => postToCloud("/workspaces/analytics", { analytics });
-
