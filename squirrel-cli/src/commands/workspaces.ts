@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { renderTable } from '../utils/table';
 import { createSpinner } from '../utils/spinner';
 import { maybePrintJsonError, maybePrintJsonSuccess } from '../utils/output';
+import { maybePrintJson } from '../utils/output';
 
 export const registerWorkspaceCommands = (program: Command): void => {
   const workspace = program.command('workspace').description('Manage workspaces');
@@ -19,6 +20,7 @@ export const registerWorkspaceCommands = (program: Command): void => {
         const workspaces = await listWorkspaces();
         spinner.stop();
         if (maybePrintJsonSuccess(options.json, { workspaces })) {
+        if (maybePrintJson(options.json, { workspaces })) {
           return;
         }
 
@@ -53,6 +55,7 @@ export const registerWorkspaceCommands = (program: Command): void => {
         profile.activeWorkspaceId = ws.id;
         await saveConfig({ ...config, profiles: { ...config.profiles, [profile.name]: profile } });
         if (maybePrintJsonSuccess(options.json, { activeWorkspaceId: ws.id, workspace: ws })) {
+        if (maybePrintJson(options.json, { activeWorkspaceId: ws.id, workspace: ws })) {
           spinner.stop();
           return;
         }

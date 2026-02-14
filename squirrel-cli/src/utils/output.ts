@@ -54,5 +54,10 @@ export const maybePrintJsonError = (
     return false;
   }
   printJsonError(code, message, details);
+export const maybePrintJson = (enabled: boolean | undefined, payload: unknown): boolean => {
+  if (!enabled) {
+    return false;
+  }
+  printJson(payload);
   return true;
 };
