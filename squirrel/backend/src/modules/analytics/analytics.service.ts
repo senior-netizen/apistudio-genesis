@@ -43,7 +43,7 @@ export class AnalyticsService {
       this.prisma.analyticsEvent.aggregate({ where, _avg: { durationMs: true } }),
       this.prisma.$queryRaw<Array<{ p95: number | null }>>`
         SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY "duration_ms") AS p95
-        FROM "analytics_events"
+        FROM "AnalyticsEvent"
         WHERE "workspace_id" = ${workspaceId}
           AND "created_at" >= ${cutoff}
           AND "duration_ms" IS NOT NULL
@@ -81,7 +81,7 @@ export class AnalyticsService {
 
     const buckets = await this.prisma.$queryRaw<Array<{ bucket: Date; count: bigint }>>`
       SELECT date_trunc('minute', "created_at") AS bucket, COUNT(*)::bigint AS count
-      FROM "analytics_events"
+      FROM "AnalyticsEvent"
       WHERE "workspace_id" = ${workspaceId}
         AND "created_at" >= ${cutoff}
         AND "type" LIKE 'request.error%'

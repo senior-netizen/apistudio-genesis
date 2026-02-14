@@ -3,6 +3,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RbacGuard } from '../../common/guards/rbac.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { WorkspaceRole } from '../../infra/prisma/enums';
 
 @ApiTags('analytics')
 @Controller({ path: 'analytics', version: '1' })
@@ -16,6 +18,7 @@ export class AnalyticsController {
   }
 
   @Get('performance')
+  @Roles(WorkspaceRole.VIEWER, WorkspaceRole.EDITOR, WorkspaceRole.ADMIN, WorkspaceRole.OWNER)
   async performance(
     @Query('workspaceId') workspaceId: string,
     @Query('windowMinutes') windowMinutes?: string,
@@ -27,6 +30,7 @@ export class AnalyticsController {
   }
 
   @Get('errors')
+  @Roles(WorkspaceRole.VIEWER, WorkspaceRole.EDITOR, WorkspaceRole.ADMIN, WorkspaceRole.OWNER)
   async errors(
     @Query('workspaceId') workspaceId: string,
     @Query('windowMinutes') windowMinutes?: string,
