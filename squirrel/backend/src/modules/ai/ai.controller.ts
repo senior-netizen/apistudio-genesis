@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AiService } from './ai.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -46,9 +46,11 @@ export class AiController {
   @Roles(WorkspaceRole.EDITOR, WorkspaceRole.ADMIN, WorkspaceRole.OWNER)
   @Post('repo-sync/oauth/start')
   startRepoSyncOauth(@Req() req: any, @Body() body: RepoSyncStartDto) {
+    const workspaceId = this.getAuthorizedWorkspaceId(req, body.workspaceId);
+
     return this.ai.createRepoSyncAuthorizationUrl({
       provider: body.provider,
-      workspaceId: body.workspaceId,
+      workspaceId,
       redirectUri: body.redirectUri,
       userId: req.user.id,
     });
@@ -57,12 +59,32 @@ export class AiController {
   @Roles(WorkspaceRole.EDITOR, WorkspaceRole.ADMIN, WorkspaceRole.OWNER)
   @Post('repo-sync/oauth/callback')
   handleRepoSyncOauthCallback(@Req() req: any, @Body() body: RepoSyncCallbackDto) {
+    const workspaceId = this.getAuthorizedWorkspaceId(req, body.workspaceId);
+
     return this.ai.handleRepoSyncOauthCallback({
       provider: body.provider,
-      workspaceId: body.workspaceId,
+      workspaceId,
       code: body.code,
       state: body.state,
       userId: req.user.id,
     });
+  }
+
+  private getAuthorizedWorkspaceId(req: any, workspaceId: string): string {
+    const headerWorkspaceId = req.headers?.['x-workspace-id'];
+
+    if (typeof headerWorkspaceId !== 'string' || !headerWorkspaceId.trim()) {
+      throw new BadRequestException('x-workspace-id header is required.');
+    }
+
+    if (!workspaceId?.trim()) {
+      throw new BadRequestException('workspaceId is required.');
+    }
+
+    if (workspaceId !== headerWorkspaceId) {
+      throw new BadRequestException('workspaceId must match x-workspace-id header.');
+    }
+
+    return headerWorkspaceId;
   }
 }
