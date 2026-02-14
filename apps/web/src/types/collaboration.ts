@@ -89,7 +89,8 @@ export type ActivityType =
   | 'session-ended'
   | 'comment'
   | 'member-added'
-  | 'member-removed';
+  | 'member-removed'
+  | 'typing';
 
 export interface CollaborationActivity {
   id: Ulid;

@@ -40,10 +40,8 @@ vi.mock('../../store', () => ({
 }));
 
 // provide getState for UrlBar send button usage
-// @ts-expect-error mock assignment
 import { useAppStore } from '../../store';
-// @ts-expect-error mock property
-useAppStore.getState = () => mockState;
+(useAppStore as unknown as { getState: () => typeof mockState }).getState = () => mockState;
 
 describe('RequestBuilder safe rendering', () => {
   beforeEach(() => {

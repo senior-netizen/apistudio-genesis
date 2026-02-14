@@ -611,7 +611,7 @@ export function ImportExportControls() {
             {!auditLoading && !latestAudit && 'Import and export actions are logged for this workspace.'}
           </span>
           <Button
-            variant="link"
+            variant="ghost"
             size="sm"
             className="px-0 text-xs"
             disabled={!workspaceId}

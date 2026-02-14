@@ -58,7 +58,7 @@ export interface RequestSlice {
   activateRequestTab: (requestId: string) => void;
   closeRequestTab: (requestId: string) => void;
   renameRequestTab: (requestId: string, title: string) => void;
-  duplicateRequestTab: (requestId: string) => void;
+  duplicateRequestTab: (requestId: string) => Promise<void>;
   moveRequestTab: (requestId: string, targetIndex: number) => void;
   sendRequest: () => Promise<void>;
 }
@@ -225,8 +225,8 @@ export const createRequestSlice: StateCreator<AppState, [], [], RequestSlice> = 
     });
     persistTabs(get().openRequestTabs);
   },
-  duplicateRequestTab(requestId) {
-    const clone = get().duplicateRequest(requestId);
+  async duplicateRequestTab(requestId) {
+    const clone = await get().duplicateRequest(requestId);
     if (!clone) return;
     const cloneId = String(clone.id);
     set((state) => {
