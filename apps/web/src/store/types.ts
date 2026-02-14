@@ -1,3 +1,4 @@
+import type { Variable } from '../types/api';
 import type { CollectionsSlice } from './collectionsSlice';
 import type { RequestSlice } from './requestSlice';
 import type { ResponseSlice } from './responseSlice';
@@ -17,6 +18,7 @@ export type AppState = CollectionsSlice &
   SubscriptionSlice &
   CollaborationSlice &
   CollectionPermissionsSlice & {
+    globalVariables: Variable[];
     initialized: boolean;
     initializing: boolean;
     initializationError: string | null;
