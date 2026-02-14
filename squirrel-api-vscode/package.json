@@ -48,6 +48,70 @@
           "name": "Squirrel Control Center"
         }
       ]
+    },
+    "configuration": {
+      "title": "Squirrel API Studio",
+      "properties": {
+        "@squirrel.vscode.ai.endpoint": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Remote AI endpoint base URL (e.g. `https://api.squirrel.dev`). Extension calls `<endpoint>/ai/assist`."
+        },
+        "@squirrel.vscode.ai.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Bearer token used for remote AI requests."
+        },
+        "@squirrel.vscode.ai.model": {
+          "type": "string",
+          "default": "squirrel-general-v1",
+          "markdownDescription": "Model identifier sent to the remote AI endpoint."
+        },
+        "@squirrel.vscode.ai.timeoutMs": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1000,
+          "markdownDescription": "Remote AI request timeout in milliseconds."
+        },
+        "@squirrel.vscode.ai.fallbackEnabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "When enabled, AI commands fall back to deterministic local responses if remote AI is unavailable."
+        },
+        "@squirrel.vscode.cloudSync.enable": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enable cloud synchronization of projects and analytics snapshots."
+        },
+        "@squirrel.vscode.cloudSync.endpoint": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Cloud sync API base URL."
+        },
+        "@squirrel.vscode.cloudSync.token": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Access token used for cloud sync requests."
+        },
+        "@squirrel.vscode.cloudSync.workspaceId": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional workspace identifier attached as `X-Workspace` header."
+        },
+        "@squirrel.vscode.cloudSync.timeoutMs": {
+          "type": "number",
+          "default": 8000,
+          "minimum": 1000,
+          "markdownDescription": "Cloud sync request timeout in milliseconds."
+        },
+        "@squirrel.vscode.cloudSync.retries": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 5,
+          "markdownDescription": "Number of retries for failed cloud sync requests."
+        }
+      }
     }
   },
   "scripts": {

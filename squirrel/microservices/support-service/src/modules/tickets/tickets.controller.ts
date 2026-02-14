@@ -6,6 +6,7 @@ import {
     Patch,
     Post,
     Req,
+    UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -27,16 +28,13 @@ export class TicketsController {
     @Post()
     @ApiOperation({ summary: 'Create a new support ticket' })
     create(@Req() req: any, @Body() dto: CreateTicketDto) {
-        // Mock user ID for now if AuthGuard isn't fully active
-        const userId = req.user?.id || 'mock-user-id';
-        return this.ticketsService.create(userId, dto);
+        return this.ticketsService.create(this.getAuthenticatedUserId(req), dto);
     }
 
     @Get()
     @ApiOperation({ summary: 'List my tickets' })
     findAll(@Req() req: any) {
-        const userId = req.user?.id || 'mock-user-id';
-        return this.ticketsService.findAll(userId);
+        return this.ticketsService.findAll(this.getAuthenticatedUserId(req));
     }
 
     @Get('admin/all')
@@ -60,8 +58,7 @@ export class TicketsController {
         @Param('id') id: string,
         @Body() dto: CreateCommentDto,
     ) {
-        const userId = req.user?.id || 'mock-user-id';
-        return this.ticketsService.addComment(id, userId, dto);
+        return this.ticketsService.addComment(id, this.getAuthenticatedUserId(req), dto);
     }
 
     @Patch(':id/status')
@@ -71,4 +68,13 @@ export class TicketsController {
     updateStatus(@Param('id') id: string, @Body('status') status: TicketStatus) {
         return this.ticketsService.updateStatus(id, status);
     }
+
+    private getAuthenticatedUserId(req: any): string {
+        const userId = req?.user?.id;
+        if (!userId) {
+            throw new UnauthorizedException('Authentication required to access ticket resources.');
+        }
+        return userId;
+    }
 }
+
