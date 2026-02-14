@@ -12,6 +12,7 @@ import { getActiveProfile, loadConfig } from '../config/config';
 import { logger } from '../utils/logger';
 import { renderTable } from '../utils/table';
 import { createSpinner } from '../utils/spinner';
+import { maybePrintJsonError, maybePrintJsonSuccess } from '../utils/output';
 import { maybePrintJson } from '../utils/output';
 
 const parseRole = (role?: string): WorkspaceRole => {
@@ -41,6 +42,8 @@ export const registerTeamCommands = (program: Command): void => {
     .action(async (options: { workspace?: string; includeInvites?: boolean; json?: boolean }) => {
       const workspaceId = await resolveWorkspaceId(options.workspace);
       if (!workspaceId) {
+        if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
+          process.exitCode = 1;
         if (maybePrintJson(options.json, { error: 'workspace_required' })) {
           return;
         }
@@ -55,6 +58,7 @@ export const registerTeamCommands = (program: Command): void => {
           options.includeInvites ? listInvitations(workspaceId) : Promise.resolve([])
         ]);
         spinner.stop();
+        if (maybePrintJsonSuccess(options.json, { workspaceId, members, invites })) {
         if (maybePrintJson(options.json, { workspaceId, members, invites })) {
           return;
         }
@@ -86,6 +90,10 @@ export const registerTeamCommands = (program: Command): void => {
         }
       } catch (error) {
         spinner.fail('Unable to load team members.');
+        if (maybePrintJsonError(options.json, 'team_list_failed', 'Unable to load team members.', error instanceof Error ? error.message : String(error))) {
+          process.exitCode = 1;
+          return;
+        }
         throw error;
       }
     });
@@ -99,6 +107,8 @@ export const registerTeamCommands = (program: Command): void => {
     .action(async (email: string, options: { role?: string; workspace?: string; json?: boolean }) => {
       const workspaceId = await resolveWorkspaceId(options.workspace);
       if (!workspaceId) {
+        if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
+          process.exitCode = 1;
         if (maybePrintJson(options.json, { error: 'workspace_required' })) {
           return;
         }
@@ -109,6 +119,7 @@ export const registerTeamCommands = (program: Command): void => {
       const spinner = createSpinner(`Sending invite to ${email}...`);
       try {
         const invite = await inviteTeamMember(workspaceId, email, role);
+        if (maybePrintJsonSuccess(options.json, { workspaceId, invite })) {
         if (maybePrintJson(options.json, { workspaceId, invite })) {
           spinner.stop();
           return;
@@ -116,6 +127,10 @@ export const registerTeamCommands = (program: Command): void => {
         spinner.succeed(`Invitation queued for ${invite.email} (${invite.role}).`);
       } catch (error) {
         spinner.fail('Failed to send invitation.');
+        if (maybePrintJsonError(options.json, 'team_invite_failed', 'Failed to send invitation.', error instanceof Error ? error.message : String(error))) {
+          process.exitCode = 1;
+          return;
+        }
         throw error;
       }
     });
@@ -128,6 +143,8 @@ export const registerTeamCommands = (program: Command): void => {
     .action(async (memberId: string, role: string, options: { workspace?: string; json?: boolean }) => {
       const workspaceId = await resolveWorkspaceId(options.workspace);
       if (!workspaceId) {
+        if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
+          process.exitCode = 1;
         if (maybePrintJson(options.json, { error: 'workspace_required' })) {
           return;
         }
@@ -138,6 +155,7 @@ export const registerTeamCommands = (program: Command): void => {
       const spinner = createSpinner('Updating role...');
       try {
         const updated = await updateMemberRole(workspaceId, memberId, parsedRole);
+        if (maybePrintJsonSuccess(options.json, { workspaceId, member: updated })) {
         if (maybePrintJson(options.json, { workspaceId, member: updated })) {
           spinner.stop();
           return;
@@ -145,6 +163,10 @@ export const registerTeamCommands = (program: Command): void => {
         spinner.succeed(`Member ${updated.email} is now ${updated.role}.`);
       } catch (error) {
         spinner.fail('Failed to update role.');
+        if (maybePrintJsonError(options.json, 'team_role_failed', 'Failed to update role.', error instanceof Error ? error.message : String(error))) {
+          process.exitCode = 1;
+          return;
+        }
         throw error;
       }
     });
@@ -159,6 +181,8 @@ export const registerTeamCommands = (program: Command): void => {
       async (memberOrInviteId: string, options: { workspace?: string; invite?: boolean; json?: boolean }) => {
         const workspaceId = await resolveWorkspaceId(options.workspace);
         if (!workspaceId) {
+          if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
+            process.exitCode = 1;
           if (maybePrintJson(options.json, { error: 'workspace_required' })) {
             return;
           }
@@ -172,6 +196,7 @@ export const registerTeamCommands = (program: Command): void => {
           } else {
             await removeMember(workspaceId, memberOrInviteId);
           }
+          if (maybePrintJsonSuccess(options.json, { workspaceId, id: memberOrInviteId, invite: Boolean(options.invite), removed: true })) {
           if (maybePrintJson(options.json, { workspaceId, id: memberOrInviteId, invite: Boolean(options.invite), removed: true })) {
             spinner.stop();
             return;
@@ -179,6 +204,10 @@ export const registerTeamCommands = (program: Command): void => {
           spinner.succeed(options.invite ? 'Invitation canceled.' : 'Member removed.');
         } catch (error) {
           spinner.fail('Unable to remove entry.');
+          if (maybePrintJsonError(options.json, 'team_remove_failed', 'Unable to remove entry.', error instanceof Error ? error.message : String(error))) {
+            process.exitCode = 1;
+            return;
+          }
           throw error;
         }
       }

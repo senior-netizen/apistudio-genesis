@@ -4,6 +4,7 @@ import { getActiveProfile, loadConfig, saveConfig } from '../config/config';
 import { logger } from '../utils/logger';
 import { renderTable } from '../utils/table';
 import { createSpinner } from '../utils/spinner';
+import { maybePrintJsonError, maybePrintJsonSuccess } from '../utils/output';
 import { maybePrintJson } from '../utils/output';
 
 export const registerWorkspaceCommands = (program: Command): void => {
@@ -18,6 +19,7 @@ export const registerWorkspaceCommands = (program: Command): void => {
       try {
         const workspaces = await listWorkspaces();
         spinner.stop();
+        if (maybePrintJsonSuccess(options.json, { workspaces })) {
         if (maybePrintJson(options.json, { workspaces })) {
           return;
         }
@@ -32,6 +34,10 @@ export const registerWorkspaceCommands = (program: Command): void => {
         );
       } catch (error) {
         spinner.fail('Failed to fetch workspaces.');
+        if (maybePrintJsonError(options.json, 'workspace_list_failed', 'Failed to fetch workspaces.', error instanceof Error ? error.message : String(error))) {
+          process.exitCode = 1;
+          return;
+        }
         throw error;
       }
     });
@@ -48,6 +54,7 @@ export const registerWorkspaceCommands = (program: Command): void => {
         const profile = getActiveProfile(config);
         profile.activeWorkspaceId = ws.id;
         await saveConfig({ ...config, profiles: { ...config.profiles, [profile.name]: profile } });
+        if (maybePrintJsonSuccess(options.json, { activeWorkspaceId: ws.id, workspace: ws })) {
         if (maybePrintJson(options.json, { activeWorkspaceId: ws.id, workspace: ws })) {
           spinner.stop();
           return;
@@ -55,6 +62,10 @@ export const registerWorkspaceCommands = (program: Command): void => {
         spinner.succeed(`Active workspace set to ${ws.name}`);
       } catch (error) {
         spinner.fail('Failed to set workspace.');
+        if (maybePrintJsonError(options.json, 'workspace_use_failed', 'Failed to set workspace.', error instanceof Error ? error.message : String(error))) {
+          process.exitCode = 1;
+          return;
+        }
         throw error;
       }
     });
