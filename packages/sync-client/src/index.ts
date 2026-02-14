@@ -20,6 +20,7 @@ import type {
   SyncClientEvents,
   SyncClientLogger,
   SyncClientOptions,
+  SyncConflictEvent,
   SyncScope,
   SyncStatus,
 } from './types';
@@ -313,6 +314,11 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
           this.emit('presence', payload);
           break;
         }
+        case 'sync.conflict': {
+          const payload = parsed.payload as SyncConflictEvent;
+          this.emit('conflict', payload);
+          break;
+        }
         case 'error': {
           throw new Error((parsed.payload as { message: string })?.message ?? 'Unknown sync error');
         }
@@ -443,6 +449,14 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
           scope: { scopeType: payload.conflicts[0].scopeType, scopeId: payload.conflicts[0].scopeId },
           changes: payload.conflicts,
         });
+        for (const conflict of payload.conflicts) {
+          this.emit('conflict', {
+            scopeType: conflict.scopeType,
+            scopeId: conflict.scopeId,
+            deviceId: conflict.deviceId ?? 'unknown-device',
+            divergence: 1,
+          });
+        }
       }
     } catch (error) {
       this.logger().error('Push failed', error);
