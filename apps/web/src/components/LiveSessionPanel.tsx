@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSyncClient, useSyncStatus } from '@sdl/sync-client/react';
 import type { SyncPresenceEvent } from '@sdl/sync-core';
-import { useAppStore } from '@/store';
+import type { SyncConflictEvent } from '@sdl/sync-client';
+import { useAuthStore } from '@/modules/auth/authStore';
 
 type Participant = { id: string; name: string };
 type ExecutionEvent = { requestId: string; userId: string; at: string };
@@ -15,9 +16,10 @@ type LiveSessionPanelProps = {
 export function LiveSessionPanel({ roomId, participants: initialParticipants = [], onRunRequest }: LiveSessionPanelProps) {
   const syncClient = useSyncClient();
   const syncStatus = useSyncStatus();
-  const currentUserId = useAppStore((state) => state.subscription?.user?.id ?? 'unknown-user');
+  const currentUserId = useAuthStore((state) => state.user?.id ?? 'unknown-user');
   const [participants, setParticipants] = useState<Record<string, Participant & { lastSeenAt: number }>>({});
   const [history, setHistory] = useState<ExecutionEvent[]>([]);
+  const [conflicts, setConflicts] = useState<SyncConflictEvent[]>([]);
 
   const knownParticipants = useMemo(() => {
     return initialParticipants.reduce<Record<string, Participant & { lastSeenAt: number }>>((acc, participant) => {
@@ -39,7 +41,7 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
         const existing = current[deviceId] ?? knownParticipants[deviceId];
         const participant: Participant & { lastSeenAt: number } = existing ?? {
           id: deviceId,
-          name: existing?.name ?? deviceId,
+          name: deviceId,
           lastSeenAt: Date.now(),
         };
         return {
@@ -50,14 +52,23 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
 
       if (event.type === 'cursor' && event.requestId) {
         setHistory((current) => {
+          const requestId = event.requestId;
+          if (!requestId) {
+            return current;
+          }
           const entry: ExecutionEvent = {
-            requestId: event.requestId,
+            requestId,
             userId: event.deviceId,
             at: new Date().toISOString(),
           };
           return [entry, ...current].slice(0, 15);
         });
       }
+    };
+
+
+    const onConflict = (event: SyncConflictEvent) => {
+      setConflicts((current) => [event, ...current].slice(0, 5));
     };
 
     const heartbeat = setInterval(() => {
@@ -81,10 +92,12 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
     void announcePresence();
 
     syncClient.on('presence', updatePresence);
+    syncClient.on('conflict', onConflict);
 
     return () => {
       clearInterval(heartbeat);
       syncClient.off('presence', updatePresence);
+      syncClient.off('conflict', onConflict);
     };
   }, [knownParticipants, syncClient, syncStatus]);
 
@@ -115,6 +128,27 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
           Broadcast Request Run
         </button>
       </header>
+      {conflicts.length > 0 && (
+        <div className="mb-3 rounded border border-amber-500/50 bg-amber-500/10 p-3 text-sm text-amber-200">
+          <div className="flex items-center justify-between gap-2">
+            <strong>Sync conflict detected</strong>
+            <button
+              type="button"
+              onClick={() => setConflicts([])}
+              className="rounded border border-amber-300/40 px-2 py-1 text-xs"
+            >
+              Dismiss
+            </button>
+          </div>
+          <ul className="mt-2 space-y-1">
+            {conflicts.map((conflict, index) => (
+              <li key={`${conflict.scopeType}:${conflict.scopeId}:${index}`}>
+                Scope <code>{conflict.scopeType}:{conflict.scopeId}</code> diverged by {conflict.divergence} from {conflict.deviceId}.
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="live-session-panel__body">
         <div className="live-session-panel__participants">
           <h4>Participants</h4>

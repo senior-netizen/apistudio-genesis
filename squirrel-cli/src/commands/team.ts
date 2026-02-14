@@ -12,6 +12,7 @@ import { getActiveProfile, loadConfig } from '../config/config';
 import { logger } from '../utils/logger';
 import { renderTable } from '../utils/table';
 import { createSpinner } from '../utils/spinner';
+import { maybePrintJson } from '../utils/output';
 
 const parseRole = (role?: string): WorkspaceRole => {
   const normalized = (role ?? 'EDITOR').toUpperCase();
@@ -36,9 +37,13 @@ export const registerTeamCommands = (program: Command): void => {
     .description('List members in the active or specified workspace')
     .option('-w, --workspace <id>', 'Workspace ID to inspect (defaults to active workspace)')
     .option('--include-invites', 'Show pending invitations in addition to active members')
-    .action(async (options: { workspace?: string; includeInvites?: boolean }) => {
+    .option('--json', 'Return JSON output for automation')
+    .action(async (options: { workspace?: string; includeInvites?: boolean; json?: boolean }) => {
       const workspaceId = await resolveWorkspaceId(options.workspace);
       if (!workspaceId) {
+        if (maybePrintJson(options.json, { error: 'workspace_required' })) {
+          return;
+        }
         logger.warn('No workspace specified. Run `squirrel workspace use <id>` or pass --workspace.');
         return;
       }
@@ -50,6 +55,9 @@ export const registerTeamCommands = (program: Command): void => {
           options.includeInvites ? listInvitations(workspaceId) : Promise.resolve([])
         ]);
         spinner.stop();
+        if (maybePrintJson(options.json, { workspaceId, members, invites })) {
+          return;
+        }
         if (!members.length) {
           logger.warn('No active members found.');
         } else {
@@ -87,9 +95,13 @@ export const registerTeamCommands = (program: Command): void => {
     .description('Invite a new collaborator to the workspace')
     .option('-r, --role <role>', 'Role to grant (OWNER, ADMIN, EDITOR, VIEWER)', 'editor')
     .option('-w, --workspace <id>', 'Workspace ID to invite into (defaults to active workspace)')
-    .action(async (email: string, options: { role?: string; workspace?: string }) => {
+    .option('--json', 'Return JSON output for automation')
+    .action(async (email: string, options: { role?: string; workspace?: string; json?: boolean }) => {
       const workspaceId = await resolveWorkspaceId(options.workspace);
       if (!workspaceId) {
+        if (maybePrintJson(options.json, { error: 'workspace_required' })) {
+          return;
+        }
         logger.warn('No workspace specified. Run `squirrel workspace use <id>` or pass --workspace.');
         return;
       }
@@ -97,6 +109,10 @@ export const registerTeamCommands = (program: Command): void => {
       const spinner = createSpinner(`Sending invite to ${email}...`);
       try {
         const invite = await inviteTeamMember(workspaceId, email, role);
+        if (maybePrintJson(options.json, { workspaceId, invite })) {
+          spinner.stop();
+          return;
+        }
         spinner.succeed(`Invitation queued for ${invite.email} (${invite.role}).`);
       } catch (error) {
         spinner.fail('Failed to send invitation.');
@@ -108,9 +124,13 @@ export const registerTeamCommands = (program: Command): void => {
     .command('role <memberId> <role>')
     .description('Update the role for an existing member')
     .option('-w, --workspace <id>', 'Workspace ID (defaults to active workspace)')
-    .action(async (memberId: string, role: string, options: { workspace?: string }) => {
+    .option('--json', 'Return JSON output for automation')
+    .action(async (memberId: string, role: string, options: { workspace?: string; json?: boolean }) => {
       const workspaceId = await resolveWorkspaceId(options.workspace);
       if (!workspaceId) {
+        if (maybePrintJson(options.json, { error: 'workspace_required' })) {
+          return;
+        }
         logger.warn('No workspace specified.');
         return;
       }
@@ -118,6 +138,10 @@ export const registerTeamCommands = (program: Command): void => {
       const spinner = createSpinner('Updating role...');
       try {
         const updated = await updateMemberRole(workspaceId, memberId, parsedRole);
+        if (maybePrintJson(options.json, { workspaceId, member: updated })) {
+          spinner.stop();
+          return;
+        }
         spinner.succeed(`Member ${updated.email} is now ${updated.role}.`);
       } catch (error) {
         spinner.fail('Failed to update role.');
@@ -130,10 +154,14 @@ export const registerTeamCommands = (program: Command): void => {
     .description('Remove a member or cancel a pending invitation')
     .option('-w, --workspace <id>', 'Workspace ID (defaults to active workspace)')
     .option('--invite', 'Treat the identifier as an invitation ID')
+    .option('--json', 'Return JSON output for automation')
     .action(
-      async (memberOrInviteId: string, options: { workspace?: string; invite?: boolean }) => {
+      async (memberOrInviteId: string, options: { workspace?: string; invite?: boolean; json?: boolean }) => {
         const workspaceId = await resolveWorkspaceId(options.workspace);
         if (!workspaceId) {
+          if (maybePrintJson(options.json, { error: 'workspace_required' })) {
+            return;
+          }
           logger.warn('No workspace specified.');
           return;
         }
@@ -143,6 +171,10 @@ export const registerTeamCommands = (program: Command): void => {
             await cancelInvitation(workspaceId, memberOrInviteId);
           } else {
             await removeMember(workspaceId, memberOrInviteId);
+          }
+          if (maybePrintJson(options.json, { workspaceId, id: memberOrInviteId, invite: Boolean(options.invite), removed: true })) {
+            spinner.stop();
+            return;
           }
           spinner.succeed(options.invite ? 'Invitation canceled.' : 'Member removed.');
         } catch (error) {
