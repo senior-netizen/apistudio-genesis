@@ -17,7 +17,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "seed": "ts-node --project tsconfig.json prisma/seed.ts"
+    "seed": "ts-node --project tsconfig.json prisma/seed.ts",
+    "start:worker:ai": "node dist/workers/ai-repo-sync.worker.js"
   },
   "dependencies": {
     "@bull-board/api": "^5.15.1",

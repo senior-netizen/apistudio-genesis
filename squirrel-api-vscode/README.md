@@ -12,7 +12,7 @@ Squirrel API Studio brings the full Squirrel API experience into Visual Studio C
 - 🧾 **Response viewer** featuring Raw / JSON / Headers tabs, size metrics, and copy-to-clipboard helpers.
 - 🧪 **Test runner** powered by a mini harness (`test`/`expect`) executing in the extension host with captured assertions.
 - 🌐 **GraphQL playground** and **WebSocket client** for realtime experimentation.
-- 🧠 **Squirrel AI assistant stub** ready for cloud integration with actionable prompts.
+- 🧠 **Squirrel AI assistant** with remote endpoint support and deterministic local fallback.
 - 📚 **Docs generator** producing Markdown/HTML bundles from collections.
 - 📊 **Analytics dashboard** visualising recent latency and success/failure breakdowns via Recharts.
 - 🧭 **Activity bar control center** to launch the studio instantly.
@@ -33,7 +33,7 @@ squirrel-api-vscode/
 │  │   ├─ historyManager.ts # History analytics, favourites, import/export
 │  │   └─ projectManager.ts # Collection CRUD + documentation generator
 │  ├─ ai/
-│  │   └─ squirrelAI.ts     # Offline AI assistant stub
+│  │   └─ squirrelAI.ts     # Remote AI bridge + deterministic local fallback
 │  ├─ utils/
 │  │   └─ storage.ts        # Global state + secret helpers
 │  └─ types/api.ts          # Shared backend message types
@@ -86,15 +86,15 @@ npm run package         # Produce a VSIX via vsce
 - All network requests execute within the extension host via Axios, keeping credentials out of the webview sandbox.
 - CSP rules for the webview restrict scripts to the compiled bundle and limit network access to HTTPS/WSS origins for features such as the WebSocket tester.
 
-## Cloud sync preview (optional)
+## Cloud sync
 
-- The extension ships with dormant helpers for Squirrel Cloud synchronization in `src/services/cloudSync.ts`.
-- To opt in once endpoints are available, uncomment the hooks in `src/panels/ApiPanel.ts` and provide the following settings in VS Code:
+- The extension can sync projects and analytics snapshots to Squirrel Cloud via `src/services/cloudSync.ts`.
+- To enable it, configure the following settings in VS Code:
   - `@squirrel.vscode.cloudSync.enable` → `true`
   - `@squirrel.vscode.cloudSync.endpoint` → Cloud API base URL
   - `@squirrel.vscode.cloudSync.token` → Personal or workspace access token
   - `@squirrel.vscode.cloudSync.workspaceId` → (Optional) target workspace identifier
-- When enabled, project collections and analytics snapshots can be pushed securely to the configured workspace.
+- When enabled, project collections and analytics snapshots are pushed to the configured workspace with retry + timeout controls.
 
 ## Telemetry
 

@@ -30,20 +30,20 @@ describe('RBAC UI gating', () => {
 
   it('limits admin from founder-only markers but shows admin controls', () => {
     render(<Dashboard user={{ role: 'admin' }} />);
-    expect(screen.getByText('Admin Panel')).toBeInTheDocument();
-    expect(screen.getByText('Billing')).toBeInTheDocument();
-    expect(screen.queryByText('Founder Controls')).not.toBeInTheDocument();
+    expect(screen.getByText('Admin Panel')).toBeTruthy();
+    expect(screen.getByText('Billing')).toBeTruthy();
+    expect(screen.queryByText('Founder Controls')).not.toBeTruthy();
   });
 
   it('restricts maintainer/editor/viewer appropriately', () => {
     render(<Dashboard user={{ role: 'maintainer' }} />);
-    expect(screen.getByText('Team Management')).toBeInTheDocument();
-    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument();
+    expect(screen.getByText('Team Management')).toBeTruthy();
+    expect(screen.queryByText('Admin Panel')).not.toBeTruthy();
   });
 
   it('handles undefined user gracefully', () => {
     render(<Dashboard user={null} />);
-    expect(screen.getByText('Read Only')).toBeInTheDocument();
-    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument();
+    expect(screen.getByText('Read Only')).toBeTruthy();
+    expect(screen.queryByText('Admin Panel')).not.toBeTruthy();
   });
 });

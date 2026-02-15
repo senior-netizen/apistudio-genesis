@@ -20,6 +20,12 @@ interface AuthMetadataItem {
   type: AuthType;
 }
 
+const toNoneCredential = (item: AuthMetadataItem): AuthCredentials => ({
+  id: item.id,
+  name: item.name,
+  type: "none",
+});
+
 const codeVerifiers = new Map<string, string>();
 
 const toMetadata = ({ id, name, type }: AuthCredentials): AuthMetadataItem => ({ id, name, type });
@@ -29,18 +35,18 @@ export const getAuthCredentials = async (): Promise<AuthCredentials[]> => {
   const resolved = await Promise.all(
     meta.map(async (item) => {
       if (item.type === "none") {
-        return { ...item } satisfies AuthCredentials;
+        return toNoneCredential(item);
       }
       const secret = await getSecret(authSecretId(item.id));
       if (!secret) {
-        return { ...item } satisfies AuthCredentials;
+        return toNoneCredential(item);
       }
       try {
         const parsed = JSON.parse(secret) as AuthCredentials;
         return { ...parsed, name: item.name } as AuthCredentials;
       } catch (error) {
         console.error("Failed to parse auth secret", error);
-        return { ...item } satisfies AuthCredentials;
+        return toNoneCredential(item);
       }
     })
   );
@@ -257,8 +263,10 @@ export const applyAuthToRequest = async (request: ApiRequestPayload): Promise<Ap
       }
       if (credential.token.expiresAt && credential.token.expiresAt < Date.now()) {
         const refreshed = await refreshOAuthToken(credential.id);
-        const updated = refreshed?.find((item) => item.id === credential.id && item.type === "oauth2");
-        if (updated && updated.token) {
+        const updated = refreshed?.find(
+          (item): item is Extract<AuthCredentials, { type: "oauth2" }> => item.id === credential.id && item.type === "oauth2"
+        );
+        if (updated?.token) {
           return {
             ...request,
             headers: {
