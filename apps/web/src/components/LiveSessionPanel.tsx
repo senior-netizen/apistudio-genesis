@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSyncClient, useSyncStatus } from '@sdl/sync-client/react';
 import type { SyncPresenceEvent } from '@sdl/sync-core';
 import type { SyncConflictEvent, SyncConflictResolutionAction } from '@sdl/sync-client';
+import type { SyncConflictEvent } from '@sdl/sync-client';
 import { useAuthStore } from '@/modules/auth/authStore';
 
 type Participant = { id: string; name: string };
@@ -199,6 +200,11 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
                 </li>
               );
             })}
+            {conflicts.map((conflict, index) => (
+              <li key={`${conflict.scopeType}:${conflict.scopeId}:${index}`}>
+                Scope <code>{conflict.scopeType}:{conflict.scopeId}</code> diverged by {conflict.divergence} from {conflict.deviceId}.
+              </li>
+            ))}
           </ul>
         </div>
       )}

@@ -477,6 +477,7 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
             scopeId: conflict.scopeId,
             deviceId: conflict.deviceId ?? 'unknown-device',
             divergence: typeof (conflict as unknown as { divergence?: unknown }).divergence === 'number' ? Number((conflict as unknown as { divergence: unknown }).divergence) : 1,
+            divergence: 1,
           });
         }
       }
