@@ -1,5 +1,5 @@
-import { RoleLevels } from '../../common/rbac/roles.ts';
-export { RoleLevels } from '../../common/rbac/roles.ts';
+import { RoleLevels } from '../../common/rbac/roles';
+export { RoleLevels } from '../../common/rbac/roles';
 
 export function getEffectiveRole<T extends { role?: string | null; isFounder?: boolean | null }>(
   user: T | null | undefined,

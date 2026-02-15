@@ -48,3 +48,6 @@ Operators can force a workspace back to a clean snapshot with the following play
 * **VS Code** – `createExtensionSyncClient` stores state inside the extension’s global storage and surfaces status in the status bar.
 
 See the source for concrete usage examples and extend the adapters as deeper integrations land.
+
+
+For staged validation and evidence capture, run the Sprint E drill in `docs/sync/conflict-recovery-drill.md`.
