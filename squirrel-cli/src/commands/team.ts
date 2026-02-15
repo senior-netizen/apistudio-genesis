@@ -13,6 +13,7 @@ import { logger } from '../utils/logger';
 import { renderTable } from '../utils/table';
 import { createSpinner } from '../utils/spinner';
 import { maybePrintJsonError, maybePrintJsonSuccess } from '../utils/output';
+import { maybePrintJson } from '../utils/output';
 
 const parseRole = (role?: string): WorkspaceRole => {
   const normalized = (role ?? 'EDITOR').toUpperCase();
@@ -43,6 +44,7 @@ export const registerTeamCommands = (program: Command): void => {
       if (!workspaceId) {
         if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
           process.exitCode = 1;
+        if (maybePrintJson(options.json, { error: 'workspace_required' })) {
           return;
         }
         logger.warn('No workspace specified. Run `squirrel workspace use <id>` or pass --workspace.');
@@ -57,6 +59,7 @@ export const registerTeamCommands = (program: Command): void => {
         ]);
         spinner.stop();
         if (maybePrintJsonSuccess(options.json, { workspaceId, members, invites })) {
+        if (maybePrintJson(options.json, { workspaceId, members, invites })) {
           return;
         }
         if (!members.length) {
@@ -106,6 +109,7 @@ export const registerTeamCommands = (program: Command): void => {
       if (!workspaceId) {
         if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
           process.exitCode = 1;
+        if (maybePrintJson(options.json, { error: 'workspace_required' })) {
           return;
         }
         logger.warn('No workspace specified. Run `squirrel workspace use <id>` or pass --workspace.');
@@ -116,6 +120,7 @@ export const registerTeamCommands = (program: Command): void => {
       try {
         const invite = await inviteTeamMember(workspaceId, email, role);
         if (maybePrintJsonSuccess(options.json, { workspaceId, invite })) {
+        if (maybePrintJson(options.json, { workspaceId, invite })) {
           spinner.stop();
           return;
         }
@@ -140,6 +145,7 @@ export const registerTeamCommands = (program: Command): void => {
       if (!workspaceId) {
         if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
           process.exitCode = 1;
+        if (maybePrintJson(options.json, { error: 'workspace_required' })) {
           return;
         }
         logger.warn('No workspace specified.');
@@ -150,6 +156,7 @@ export const registerTeamCommands = (program: Command): void => {
       try {
         const updated = await updateMemberRole(workspaceId, memberId, parsedRole);
         if (maybePrintJsonSuccess(options.json, { workspaceId, member: updated })) {
+        if (maybePrintJson(options.json, { workspaceId, member: updated })) {
           spinner.stop();
           return;
         }
@@ -176,6 +183,7 @@ export const registerTeamCommands = (program: Command): void => {
         if (!workspaceId) {
           if (maybePrintJsonError(options.json, 'workspace_required', 'No workspace specified.')) {
             process.exitCode = 1;
+          if (maybePrintJson(options.json, { error: 'workspace_required' })) {
             return;
           }
           logger.warn('No workspace specified.');
@@ -189,6 +197,7 @@ export const registerTeamCommands = (program: Command): void => {
             await removeMember(workspaceId, memberOrInviteId);
           }
           if (maybePrintJsonSuccess(options.json, { workspaceId, id: memberOrInviteId, invite: Boolean(options.invite), removed: true })) {
+          if (maybePrintJson(options.json, { workspaceId, id: memberOrInviteId, invite: Boolean(options.invite), removed: true })) {
             spinner.stop();
             return;
           }

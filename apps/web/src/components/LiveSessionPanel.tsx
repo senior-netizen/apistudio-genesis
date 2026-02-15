@@ -3,6 +3,7 @@ import { useSyncClient, useSyncStatus } from '@sdl/sync-client/react';
 import type { SyncPresenceEvent } from '@sdl/sync-core';
 import type { SyncConflictEvent, SyncConflictResolutionAction } from '@sdl/sync-client';
 import { loadStoredResolutions, persistStoredResolution, type StoredConflictResolution } from './conflictResolutionStore';
+import type { SyncConflictEvent } from '@sdl/sync-client';
 import { useAuthStore } from '@/modules/auth/authStore';
 
 type Participant = { id: string; name: string };
@@ -135,6 +136,26 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
     }
   };
 
+
+  const resolveConflict = async (conflict: SyncConflictEvent, action: SyncConflictResolutionAction) => {
+    const key = `${conflict.scopeType}:${conflict.scopeId}:${conflict.deviceId}`;
+    setResolvingConflictKey(key);
+    try {
+      await syncClient.resolveConflict(conflict, action);
+      if (action !== 'decline') {
+        setConflicts((current) => current.filter((entry) => !(
+          entry.scopeType === conflict.scopeType
+          && entry.scopeId === conflict.scopeId
+          && entry.deviceId === conflict.deviceId
+        )));
+      }
+    } catch (error) {
+      console.error('[live-session] Failed to resolve conflict', error);
+    } finally {
+      setResolvingConflictKey(null);
+    }
+  };
+
   const emitRun = async () => {
     const deviceId = syncClient.getDeviceId();
     if (!deviceId) {
@@ -212,6 +233,11 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
                 </li>
               );
             })}
+            {conflicts.map((conflict, index) => (
+              <li key={`${conflict.scopeType}:${conflict.scopeId}:${index}`}>
+                Scope <code>{conflict.scopeType}:{conflict.scopeId}</code> diverged by {conflict.divergence} from {conflict.deviceId}.
+              </li>
+            ))}
           </ul>
         </div>
       )}

@@ -486,6 +486,8 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
             divergence: typeof (conflict as unknown as { divergence?: unknown }).divergence === 'number' ? Number((conflict as unknown as { divergence: unknown }).divergence) : 1,
           });
           this.recordConflictMetric();
+            divergence: 1,
+          });
         }
       }
     } catch (error) {
