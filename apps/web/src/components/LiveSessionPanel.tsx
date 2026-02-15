@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSyncClient, useSyncStatus } from '@sdl/sync-client/react';
 import type { SyncPresenceEvent } from '@sdl/sync-core';
 import type { SyncConflictEvent, SyncConflictResolutionAction } from '@sdl/sync-client';
+import { loadStoredResolutions, persistStoredResolution, type StoredConflictResolution } from './conflictResolutionStore';
 import type { SyncConflictEvent } from '@sdl/sync-client';
 import { useAuthStore } from '@/modules/auth/authStore';
 
 type Participant = { id: string; name: string };
 type ExecutionEvent = { requestId: string; userId: string; at: string };
+
 
 type LiveSessionPanelProps = {
   roomId: string;
@@ -22,6 +24,7 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
   const [history, setHistory] = useState<ExecutionEvent[]>([]);
   const [conflicts, setConflicts] = useState<SyncConflictEvent[]>([]);
   const [resolvingConflictKey, setResolvingConflictKey] = useState<string | null>(null);
+  const [storedResolutions, setStoredResolutions] = useState<Record<string, StoredConflictResolution>>({});
 
   const knownParticipants = useMemo(() => {
     return initialParticipants.reduce<Record<string, Participant & { lastSeenAt: number }>>((acc, participant) => {
@@ -33,6 +36,12 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
   useEffect(() => {
     setParticipants((current) => ({ ...knownParticipants, ...current }));
   }, [knownParticipants]);
+
+
+  useEffect(() => {
+    setStoredResolutions(loadStoredResolutions());
+  }, []);
+
 
   useEffect(() => {
     if (syncStatus !== 'online') return;
@@ -70,6 +79,10 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
 
 
     const onConflict = (event: SyncConflictEvent) => {
+      const key = `${event.scopeType}:${event.scopeId}:${event.deviceId}`;
+      if (storedResolutions[key]) {
+        return;
+      }
       setConflicts((current) => [event, ...current].slice(0, 5));
     };
 
@@ -101,7 +114,27 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
       syncClient.off('presence', updatePresence);
       syncClient.off('conflict', onConflict);
     };
-  }, [knownParticipants, syncClient, syncStatus]);
+  }, [knownParticipants, storedResolutions, syncClient, syncStatus]);
+
+
+  const resolveConflict = async (conflict: SyncConflictEvent, action: SyncConflictResolutionAction) => {
+    const key = `${conflict.scopeType}:${conflict.scopeId}:${conflict.deviceId}`;
+    setResolvingConflictKey(key);
+    try {
+      await syncClient.resolveConflict(conflict, action);
+      persistStoredResolution(key, action);
+      setStoredResolutions(loadStoredResolutions());
+      setConflicts((current) => current.filter((entry) => !(
+        entry.scopeType === conflict.scopeType
+        && entry.scopeId === conflict.scopeId
+        && entry.deviceId === conflict.deviceId
+      )));
+    } catch (error) {
+      console.error('[live-session] Failed to resolve conflict', error);
+    } finally {
+      setResolvingConflictKey(null);
+    }
+  };
 
 
   const resolveConflict = async (conflict: SyncConflictEvent, action: SyncConflictResolutionAction) => {

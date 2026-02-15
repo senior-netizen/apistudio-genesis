@@ -176,6 +176,7 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
     const scope: SyncScope = { scopeType: event.scopeType, scopeId: event.scopeId };
     if (action === 'decline') {
       this.logger().debug('Conflict declined by client', scope);
+      this.emit('metrics', { ...this.metrics, timestamp: Date.now() });
       return;
     }
 
@@ -339,6 +340,7 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
         case 'sync.conflict': {
           const payload = parsed.payload as SyncConflictEvent;
           this.emit('conflict', payload);
+          this.recordConflictMetric();
           break;
         }
         case 'error': {
@@ -350,6 +352,11 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
     } catch (error) {
       this.logger().error('Failed to parse websocket message', error);
     }
+  }
+
+  private recordConflictMetric(increment = 1) {
+    this.metrics.conflicts = (this.metrics.conflicts ?? 0) + increment;
+    this.emit('metrics', { ...this.metrics, timestamp: Date.now() });
   }
 
   private schedulePush() {
@@ -477,6 +484,8 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
             scopeId: conflict.scopeId,
             deviceId: conflict.deviceId ?? 'unknown-device',
             divergence: typeof (conflict as unknown as { divergence?: unknown }).divergence === 'number' ? Number((conflict as unknown as { divergence: unknown }).divergence) : 1,
+          });
+          this.recordConflictMetric();
             divergence: 1,
           });
         }

@@ -8,6 +8,7 @@ This checklist operationalizes Sprint E release gates for conflict resolution, A
 # 1) Sync conflict resolution operations
 cd packages/sync-client && npm run typecheck
 cd apps/web && npx eslint src/components/LiveSessionPanel.tsx
+cd apps/web && npx vitest run src/components/conflictResolutionStore.test.ts
 
 # 2) VS Code AI + cloud-sync production controls
 cd squirrel-api-vscode && npx vitest run src/ai/squirrelAI.spec.ts src/services/cloudSync.spec.ts
@@ -28,3 +29,7 @@ bash -n scripts/hosted-bootstrap.sh
 - Cloud sync validates required config and retries transient errors.
 - Analytics pipeline endpoint returns data quality, retention, and error-bucket summaries.
 - Hosted bootstrap enforces tenant guardrail variables and emits rate-limit tfvars.
+
+## Recovery drill
+
+- Execute `docs/sync/conflict-recovery-drill.md` in staging and attach captured evidence to the release checklist.
