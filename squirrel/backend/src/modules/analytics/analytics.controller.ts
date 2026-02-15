@@ -26,6 +26,18 @@ export class AnalyticsController {
     );
   }
 
+
+  @Get('pipeline')
+  async pipeline(
+    @Query('workspaceId') workspaceId: string,
+    @Query('windowMinutes') windowMinutes?: string,
+  ) {
+    return this.analytics.pipelineReport(
+      this.requireWorkspaceId(workspaceId),
+      this.parseWindowMinutes(windowMinutes),
+    );
+  }
+
   @Get('errors')
   async errors(
     @Query('workspaceId') workspaceId: string,

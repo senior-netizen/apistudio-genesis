@@ -62,6 +62,8 @@ export interface SyncConflictEvent {
   divergence: number;
 }
 
+export type SyncConflictResolutionAction = 'accept' | 'decline' | 'rebase';
+
 export type SyncClientEvents = {
   status: (status: SyncStatus) => void;
   error: (error: Error) => void;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSyncClient, useSyncStatus } from '@sdl/sync-client/react';
 import type { SyncPresenceEvent } from '@sdl/sync-core';
+import type { SyncConflictEvent, SyncConflictResolutionAction } from '@sdl/sync-client';
 import type { SyncConflictEvent } from '@sdl/sync-client';
 import { useAuthStore } from '@/modules/auth/authStore';
 
@@ -20,6 +21,7 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
   const [participants, setParticipants] = useState<Record<string, Participant & { lastSeenAt: number }>>({});
   const [history, setHistory] = useState<ExecutionEvent[]>([]);
   const [conflicts, setConflicts] = useState<SyncConflictEvent[]>([]);
+  const [resolvingConflictKey, setResolvingConflictKey] = useState<string | null>(null);
 
   const knownParticipants = useMemo(() => {
     return initialParticipants.reduce<Record<string, Participant & { lastSeenAt: number }>>((acc, participant) => {
@@ -101,6 +103,26 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
     };
   }, [knownParticipants, syncClient, syncStatus]);
 
+
+  const resolveConflict = async (conflict: SyncConflictEvent, action: SyncConflictResolutionAction) => {
+    const key = `${conflict.scopeType}:${conflict.scopeId}:${conflict.deviceId}`;
+    setResolvingConflictKey(key);
+    try {
+      await syncClient.resolveConflict(conflict, action);
+      if (action !== 'decline') {
+        setConflicts((current) => current.filter((entry) => !(
+          entry.scopeType === conflict.scopeType
+          && entry.scopeId === conflict.scopeId
+          && entry.deviceId === conflict.deviceId
+        )));
+      }
+    } catch (error) {
+      console.error('[live-session] Failed to resolve conflict', error);
+    } finally {
+      setResolvingConflictKey(null);
+    }
+  };
+
   const emitRun = async () => {
     const deviceId = syncClient.getDeviceId();
     if (!deviceId) {
@@ -141,6 +163,43 @@ export function LiveSessionPanel({ roomId, participants: initialParticipants = [
             </button>
           </div>
           <ul className="mt-2 space-y-1">
+            {conflicts.map((conflict, index) => {
+              const key = `${conflict.scopeType}:${conflict.scopeId}:${conflict.deviceId}`;
+              const isResolving = resolvingConflictKey === key;
+              return (
+                <li key={`${conflict.scopeType}:${conflict.scopeId}:${index}`}>
+                  <div>
+                    Scope <code>{conflict.scopeType}:{conflict.scopeId}</code> diverged by {conflict.divergence} from {conflict.deviceId}.
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      disabled={isResolving}
+                      onClick={() => void resolveConflict(conflict, 'accept')}
+                      className="rounded border border-emerald-300/40 px-2 py-1 text-xs"
+                    >
+                      Accept Server
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isResolving}
+                      onClick={() => void resolveConflict(conflict, 'rebase')}
+                      className="rounded border border-sky-300/40 px-2 py-1 text-xs"
+                    >
+                      Rebase
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isResolving}
+                      onClick={() => void resolveConflict(conflict, 'decline')}
+                      className="rounded border border-amber-300/40 px-2 py-1 text-xs"
+                    >
+                      Keep Local
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
             {conflicts.map((conflict, index) => (
               <li key={`${conflict.scopeType}:${conflict.scopeId}:${index}`}>
                 Scope <code>{conflict.scopeType}:{conflict.scopeId}</code> diverged by {conflict.divergence} from {conflict.deviceId}.

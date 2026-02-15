@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TF_DIR="$ROOT/deploy/terraform/hosted"
 TFVARS_FILE="$TF_DIR/terraform.tfvars"
 ACTION="${SQUIRREL_TERRAFORM_ACTION:-apply}"
+REQUIRE_GUARDRAILS="${SQUIRREL_REQUIRE_GUARDRAILS:-true}"
 
 if ! command -v terraform >/dev/null 2>&1; then
   echo "[bootstrap] terraform is required" >&2
@@ -25,11 +26,19 @@ if [[ "$ACTION" != "apply" && "$ACTION" != "plan" ]]; then
   exit 1
 fi
 
+if [[ "$REQUIRE_GUARDRAILS" == "true" ]]; then
+  : "${SQUIRREL_RATE_LIMIT_MAX_REQUESTS:?Set SQUIRREL_RATE_LIMIT_MAX_REQUESTS for tenant guardrails}"
+  : "${SQUIRREL_RATE_LIMIT_WINDOW_SEC:?Set SQUIRREL_RATE_LIMIT_WINDOW_SEC for tenant guardrails}"
+  echo "[bootstrap] tenant guardrails enabled (rate limit window=${SQUIRREL_RATE_LIMIT_WINDOW_SEC}s max=${SQUIRREL_RATE_LIMIT_MAX_REQUESTS})"
+fi
+
 echo "[bootstrap] writing tfvars to $TFVARS_FILE"
 cat >"$TFVARS_FILE" <<EOF_TFVARS
 project_id  = "${SQUIRREL_PROJECT_ID}"
 region      = "${SQUIRREL_REGION}"
 environment = "${SQUIRREL_ENV}"
+rate_limit_window_sec = ${SQUIRREL_RATE_LIMIT_WINDOW_SEC:-60}
+rate_limit_max_requests = ${SQUIRREL_RATE_LIMIT_MAX_REQUESTS:-120}
 EOF_TFVARS
 
 if command -v op >/dev/null 2>&1 && [[ -n "${SQUIRREL_SECRET_VAULT:-}" ]]; then
@@ -48,3 +57,6 @@ if [[ "$ACTION" == "plan" ]]; then
 else
   terraform -chdir="$TF_DIR" apply -auto-approve "$@"
 fi
+
+
+echo "[bootstrap] terraform action complete: $ACTION"

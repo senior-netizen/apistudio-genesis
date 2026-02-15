@@ -21,6 +21,7 @@ import type {
   SyncClientLogger,
   SyncClientOptions,
   SyncConflictEvent,
+  SyncConflictResolutionAction,
   SyncScope,
   SyncStatus,
 } from './types';
@@ -168,6 +169,27 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
   async queueChange(change: DurableChange): Promise<void> {
     await this.options.storage.enqueue(change);
     this.schedulePush();
+  }
+
+
+  async resolveConflict(event: SyncConflictEvent, action: SyncConflictResolutionAction): Promise<void> {
+    const scope: SyncScope = { scopeType: event.scopeType, scopeId: event.scopeId };
+    if (action === 'decline') {
+      this.logger().debug('Conflict declined by client', scope);
+      return;
+    }
+
+    if (action === 'accept') {
+      const queued = await this.options.storage.listQueued();
+      const scopedQueued = queued.filter((entry) =>
+        entry.change.scopeType === event.scopeType && entry.change.scopeId === event.scopeId,
+      );
+      if (scopedQueued.length > 0) {
+        await this.options.storage.removeQueued(scopedQueued.map((entry) => entry.id));
+      }
+    }
+
+    await this.pull(scope);
   }
 
   async sendPresence(event: SyncPresenceEvent): Promise<void> {
@@ -454,6 +476,7 @@ export class SyncClient extends EventEmitter<SyncClientEvents> {
             scopeType: conflict.scopeType,
             scopeId: conflict.scopeId,
             deviceId: conflict.deviceId ?? 'unknown-device',
+            divergence: typeof (conflict as unknown as { divergence?: unknown }).divergence === 'number' ? Number((conflict as unknown as { divergence: unknown }).divergence) : 1,
             divergence: 1,
           });
         }

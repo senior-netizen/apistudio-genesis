@@ -95,6 +95,44 @@ export class AnalyticsService {
     }));
   }
 
+
+  async pipelineReport(workspaceId: string, windowMinutes = 24 * 60) {
+    const normalizedWindow = this.normalizeWindow(windowMinutes);
+    const cutoff = new Date(Date.now() - normalizedWindow * 60_000);
+
+    const [eventsInWindow, missingDuration, oldest, newest, failureByType] = await Promise.all([
+      this.prisma.analyticsEvent.count({ where: { workspaceId, createdAt: { gte: cutoff } } }),
+      this.prisma.analyticsEvent.count({ where: { workspaceId, createdAt: { gte: cutoff }, durationMs: null } }),
+      this.prisma.analyticsEvent.findFirst({ where: { workspaceId }, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
+      this.prisma.analyticsEvent.findFirst({ where: { workspaceId }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
+      this.prisma.analyticsEvent.groupBy({
+        by: ['type'],
+        where: { workspaceId, createdAt: { gte: cutoff }, type: { startsWith: 'request.error' } },
+        _count: { type: true },
+      }),
+    ]);
+
+    const nullDurationRate = eventsInWindow > 0 ? missingDuration / eventsInWindow : 0;
+
+    return {
+      windowMinutes: normalizedWindow,
+      quality: {
+        eventsInWindow,
+        missingDurationCount: missingDuration,
+        nullDurationRate,
+      },
+      retention: {
+        oldestEventAt: oldest?.createdAt?.toISOString() ?? null,
+        newestEventAt: newest?.createdAt?.toISOString() ?? null,
+      },
+      failures: failureByType.map((entry) => ({
+        type: entry.type,
+        count: entry._count.type,
+      })),
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
   private normalizeWindow(windowMinutes: number): number {
     if (!Number.isFinite(windowMinutes) || windowMinutes <= 0) {
       throw new BadRequestException('windowMinutes must be a positive number.');
